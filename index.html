@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuickTurn: invoicing for mobile diesel mechanics</title>
+<meta name="description" content="QuickTurn turns what you say after a road call into a finished invoice. Built for mobile diesel mechanics. Try it free.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #E7DCCD;
+    --paper: #FBF8F3;
+    --brown: #6B4A1E;
+    --brown-deep: #4A3212;
+    --charcoal: #24211E;
+    --oil: #3A352F;
+    --amber: #E8A33D;
+    --line: #CDBFAC;
+    --muted: #6E655B;
+    --radius-sm: 4px;
+    --radius-lg: 14px;
+    --max: 1120px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--charcoal);
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 18px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--brown); }
+  a:focus-visible, button:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; border-radius: var(--radius-sm); }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+
+  /* Header */
+  .top { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+  .mark { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--brown); font-weight: 750; font-stretch: 112%; font-size: 22px; letter-spacing: -0.01em; }
+  .mark-dot { width: 34px; height: 34px; border-radius: 50%; background: var(--cream); border: 3px solid var(--charcoal); display: grid; place-items: center; font-size: 13px; font-weight: 800; color: var(--brown); }
+  .btn {
+    display: inline-block; text-decoration: none; font-weight: 700; font-size: 17px;
+    background: var(--charcoal); color: var(--paper);
+    padding: 14px 22px; border-radius: var(--radius-sm); border: 2px solid var(--charcoal);
+  }
+  .btn:hover { background: var(--brown-deep); border-color: var(--brown-deep); }
+  .btn-small { padding: 9px 16px; font-size: 15px; }
+
+  /* Hero */
+  .hero { padding: 40px 0 72px; display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
+  .hero h1 {
+    font-stretch: 118%; font-weight: 800; font-size: clamp(40px, 5.6vw, 68px);
+    line-height: 1.0; letter-spacing: -0.025em; margin: 0 0 22px; color: var(--charcoal);
+  }
+  .hero p.lead { font-size: 21px; color: var(--oil); max-width: 30em; margin: 0 0 30px; }
+  .hero .note { font-size: 15px; color: var(--muted); margin-top: 14px; }
+
+  /* The transformation: spoken note -> invoice */
+  .demo { position: relative; min-height: 600px; }
+  .scrap {
+    position: absolute; left: 0; top: 0; width: 70%;
+    background: #F3EBDD; padding: 22px 22px 26px; border-radius: 2px;
+    transform: rotate(-3deg);
+    box-shadow: 0 1px 0 var(--line), 0 14px 30px -18px rgba(74,50,18,.45);
+    background-image: repeating-linear-gradient(transparent 0 31px, #D9CBB5 31px 32px);
+    font-family: "Gochi Hand", cursive; font-size: 22px; line-height: 32px; color: #2C3A55;
+  }
+  .scrap .smudge { position: absolute; right: 18px; top: 14px; width: 46px; height: 30px; border-radius: 50%; background: radial-gradient(rgba(58,53,47,.22), transparent 70%); }
+  .voice {
+    position: absolute; left: 4%; top: 150px; width: 66%; z-index: 2;
+    background: var(--charcoal); color: var(--paper); border-radius: var(--radius-lg);
+    padding: 16px 18px; font-size: 16px; line-height: 1.45;
+    box-shadow: 0 18px 34px -20px rgba(36,33,30,.7);
+  }
+  .voice .who { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #CFC4B6; margin-bottom: 8px; }
+  .wave { display: inline-flex; gap: 3px; align-items: center; height: 16px; }
+  .wave i { width: 3px; background: var(--amber); border-radius: 2px; display: block; }
+  .invoice {
+    position: absolute; right: 0; bottom: 0; width: 70%; z-index: 1;
+    background: #fff; border: 2px solid var(--charcoal); border-radius: var(--radius-sm);
+    padding: 18px 20px; font-size: 15px;
+    box-shadow: 8px 8px 0 var(--cream);
+  }
+  .invoice header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid var(--charcoal); padding-bottom: 8px; margin-bottom: 8px; }
+  .invoice header b { font-stretch: 115%; font-size: 17px; }
+  .invoice header span { color: var(--muted); font-size: 13px; }
+  .invoice table { width: 100%; border-collapse: collapse; }
+  .invoice td { padding: 5px 0; border-bottom: 1px solid #EEE7DC; }
+  .invoice td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .invoice tr.total td { border-bottom: 0; font-weight: 800; font-size: 17px; padding-top: 9px; }
+  .invoice .status { display: inline-block; margin-top: 10px; font-size: 13px; font-weight: 700; color: var(--brown-deep); background: var(--cream); padding: 3px 9px; border-radius: 99px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .voice { animation: rise .6s .35s both ease-out; }
+    .invoice { animation: rise .6s .9s both ease-out; }
+    .wave i { animation: talk 1.1s ease-in-out infinite; }
+    .wave i:nth-child(2) { animation-delay: .15s } .wave i:nth-child(3) { animation-delay: .3s }
+    .wave i:nth-child(4) { animation-delay: .45s } .wave i:nth-child(5) { animation-delay: .6s }
+    @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes talk { 0%,100% { height: 4px } 50% { height: 15px } }
+  }
+  .wave i { height: 10px; }
+
+  /* Sections */
+  section { padding: 72px 0; }
+  h2 { font-stretch: 112%; font-weight: 800; font-size: clamp(30px, 3.6vw, 42px); line-height: 1.08; letter-spacing: -0.02em; margin: 0 0 18px; }
+  .intro { max-width: 36em; color: var(--oil); margin: 0 0 40px; }
+
+  .pain { background: var(--cream); }
+  .pain-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 2px solid var(--charcoal); }
+  .pain-list div { padding: 22px 26px 6px 0; }
+  .pain-list div + div { padding-left: 26px; border-left: 1px solid var(--line); }
+  .pain-list h3 { font-size: 20px; font-stretch: 108%; margin: 0 0 8px; line-height: 1.25; }
+  .pain-list p { margin: 0; color: var(--oil); font-size: 17px; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; counter-reset: step; list-style: none; padding: 0; margin: 0; }
+  .steps li { counter-increment: step; }
+  .steps li::before {
+    content: counter(step); display: grid; place-items: center;
+    width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--charcoal);
+    font-weight: 800; font-size: 19px; margin-bottom: 14px; background: var(--paper);
+  }
+  .steps h3 { font-size: 21px; margin: 0 0 6px; font-stretch: 108%; }
+  .steps p { margin: 0; color: var(--oil); font-size: 17px; }
+
+  .story { background: var(--charcoal); color: var(--paper); }
+  .story .grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 56px; align-items: start; }
+  .story h2 { color: var(--paper); }
+  .story p { color: #DCD3C6; margin: 0 0 16px; max-width: 34em; }
+  .story blockquote { margin: 0; font-family: "Gochi Hand", cursive; font-size: 30px; line-height: 1.25; color: var(--amber); }
+
+  .beta .panel { border: 2px solid var(--charcoal); border-radius: var(--radius-lg); padding: 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; background: #fff; }
+  .beta ul { margin: 0 0 8px; padding-left: 20px; color: var(--oil); }
+  .beta li { margin-bottom: 8px; }
+  .beta h3 { font-size: 19px; margin: 0 0 10px; }
+  .beta .cta-box { background: var(--cream); border-radius: var(--radius-sm); padding: 26px; align-self: center; }
+  .beta .cta-box p { margin: 0 0 18px; color: var(--oil); }
+  .beta .cta-box .small { font-size: 14px; color: var(--muted); margin: 14px 0 0; }
+
+  .faq dl { margin: 0; max-width: 46em; }
+  .faq dt { font-weight: 750; font-size: 19px; margin-top: 22px; }
+  .faq dd { margin: 6px 0 0; color: var(--oil); }
+
+  footer { border-top: 1px solid var(--line); padding: 28px 0 40px; font-size: 15px; color: var(--muted); }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+  @media (max-width: 860px) {
+    body { font-size: 17px; }
+    .hero { grid-template-columns: 1fr; gap: 36px; padding-top: 20px; padding-bottom: 56px; }
+    .demo { min-height: 680px; max-width: 460px; }
+    .pain-list, .steps { grid-template-columns: 1fr; }
+    .pain-list div + div { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); }
+    .story .grid, .beta .panel { grid-template-columns: 1fr; gap: 28px; }
+    .beta .panel { padding: 26px; }
+    section { padding: 56px 0; }
+  }
+  @media (max-width: 420px) {
+    .scrap { width: 84%; font-size: 20px; }
+    .voice { width: 84%; left: 0; }
+    .invoice { width: 88%; }
+    .invoice header b { white-space: nowrap; }
+    .invoice header span { font-size: 12px; text-align: right; }
+    .demo { min-height: 640px; }
+    .top .btn-small { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <a class="mark" href="#" aria-label="QuickTurn home"><span class="mark-dot" aria-hidden="true">QT</span>QuickTurn</a>
+    <a class="btn btn-small" href="#beta">Try it free</a>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div>
+        <h1>Stop doing invoices at the kitchen table.</h1>
+        <p class="lead">QuickTurn is built for mobile diesel mechanics. Finish the road call, talk through the job from your service truck, and it becomes a clean invoice with the unit number, parts, and every hour of labor. Done before you pull out.</p>
+        <a class="btn" href="#beta">Try it free</a>
+        <p class="note">No card needed. We'll set it up with you in 10 minutes.</p>
+      </div>
+
+      <div class="demo" aria-label="Example: a handwritten job note and a spoken description become a finished invoice">
+        <div class="scrap" aria-hidden="true">
+          <span class="smudge"></span>
+          Bowman Trkg #214<br>
+          Cascadia, turbo actuator<br>
+          regen, 3.5 hr?? + road call
+        </div>
+        <div class="voice">
+          <div class="who"><span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span> Voice note from the service truck</div>
+          “Bowman Trucking, unit 214. Replaced the turbo actuator, ran a forced regen. Three and a half hours plus the road call. PO 5531.”
+        </div>
+        <div class="invoice">
+          <header><b>Invoice #1042</b><span>Bowman Trucking, Unit 214</span></header>
+          <table>
+            <tr><td>Turbo actuator</td><td>$865.00</td></tr>
+            <tr><td>Road call</td><td>$150.00</td></tr>
+            <tr><td>Labor, 3.5 hrs</td><td>$507.50</td></tr>
+            <tr class="total"><td>Total (PO 5531)</td><td>$1,522.50</td></tr>
+          </table>
+          <span class="status">Ready for you to check and send</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<section class="pain">
+  <div class="wrap">
+    <h2>Sound familiar?</h2>
+    <p class="intro">We've talked with mobile mechanics across Utah. Fixing the truck isn't the hard part. Keeping track of it is.</p>
+    <div class="pain-list">
+      <div>
+        <h3>Invoices at the kitchen table</h3>
+        <p>Road calls end at 9 p.m. Then the notes from the truck, the texts, and the receipts all get typed in again before bed.</p>
+      </div>
+      <div>
+        <h3>Hours you never billed</h3>
+        <p>Drive time, diagnostic time, the extra half hour on a seized bolt. When it isn't written down, it doesn't make the invoice.</p>
+      </div>
+      <div>
+        <h3>Fleets want it done their way</h3>
+        <p>Unit numbers, PO numbers, mileage. Fleet customers pay slower when an invoice is missing something they need.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>How it works</h2>
+    <p class="intro">Three steps, done from your phone before you leave the yard.</p>
+    <ol class="steps">
+      <li>
+        <h3>Say it</h3>
+        <p>Finish the job and talk through it: customer, unit number, parts, hours, PO. Like leaving yourself a voice memo.</p>
+      </li>
+      <li>
+        <h3>Check it</h3>
+        <p>QuickTurn turns it into an invoice with the customer and unit already filled in. You look it over and fix anything before it goes out.</p>
+      </li>
+      <li>
+        <h3>Send it</h3>
+        <p>Text or email the invoice on the spot. The job and the truck's history are saved, so next time you know what you did on unit 214.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="story">
+  <div class="wrap grid">
+    <blockquote>My dad ran his whole diesel business off pen and paper.</blockquote>
+    <div>
+      <h2>Built by someone who grew up around diesel</h2>
+      <p>I'm Aaron, one of QuickTurn's co-founders. I grew up around my dad's diesel work and spent months working alongside him. I watched how much of his day went to notebooks, receipts, and phone calls instead of fixing trucks.</p>
+      <p>QuickTurn is the tool I wish he'd had. We're building it with real mechanics, one feature at a time, starting with the part that costs you the most time: getting from finished job to paid invoice.</p>
+    </div>
+  </div>
+</section>
+
+<section class="beta" id="beta">
+  <div class="wrap">
+    <div class="panel">
+      <div>
+        <h2>Be one of the first mechanics on QuickTurn</h2>
+        <p class="intro" style="margin-bottom:24px">We're starting with a small group of mobile diesel mechanics. It's free while we build it together.</p>
+        <h3>What you get</h3>
+        <ul>
+          <li>QuickTurn free while we build it</li>
+          <li>You tell us what to build next</li>
+          <li>We set it up with you, about 10 minutes</li>
+          <li>Our best price when we launch</li>
+        </ul>
+        <h3 style="margin-top:20px">What we ask</h3>
+        <ul>
+          <li>Use it on real jobs</li>
+          <li>About 10 minutes a week of honest feedback</li>
+        </ul>
+      </div>
+      <div class="cta-box">
+        <p>Name, phone, and the kind of work you do. That's it.</p>
+        <a class="btn" id="beta-link" href="mailto:getquickturn@gmail.com?subject=Try%20QuickTurn%20free">Try it free</a>
+        <p class="small">No card needed.<br>Or text TRY to <a href="sms:+18016339648?&body=TRY">801-633-9648</a> and Aaron will reach out.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="faq">
+  <div class="wrap">
+    <h2>Questions</h2>
+    <dl>
+      <dt>How much will it cost?</dt>
+      <dd>It's free while we build it. We haven't set final pricing, and the first mechanics on QuickTurn get our best launch price.</dd>
+      <dt>Does it work with QuickBooks?</dt>
+      <dd>That's one of the first things we're building. Most mechanics we've talked to use QuickBooks, so getting your invoices into it without retyping is a priority.</dd>
+      <dt>I mostly work on fleet trucks. Will it handle that?</dt>
+      <dd>Yes. Unit numbers, PO numbers, and each truck's repair history are built in, because fleet customers ask for them.</dd>
+      <dt>I'm not great with technology. Is that a problem?</dt>
+      <dd>No. That's who we're building it for. If it isn't simple, that's on us, and we'll set it up with you.</dd>
+      <dt>Who's behind QuickTurn?</dt>
+      <dd>QuickTurn LLC is a small Provo, Utah company started by two co-founders, Aaron Fox and Danny Jacobsen.</dd>
+    </dl>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 QuickTurn LLC, Provo, Utah</span>
+    <a href="mailto:getquickturn@gmail.com">getquickturn@gmail.com</a>
+  </div>
+</footer>
+
+<script>
+  // Paste the Google Form link here once it's created; until then the button opens an email.
+  const BETA_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe_pJ582UFbhhoA04wk8T_OfUpHU44mtJqO6i6vG0-fwETcfg/viewform";
+  if (BETA_FORM_URL) {
+    const a = document.getElementById("beta-link");
+    a.href = BETA_FORM_URL; a.target = "_blank"; a.rel = "noopener";
+  }
+</script>
+</body>
+</html>
