@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QuickTurn: invoicing for mobile diesel mechanics</title>
 <meta name="description" content="QuickTurn turns what you say after a road call into a finished invoice. Built for mobile diesel mechanics. Try it free.">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SDN8X72FWK"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-SDN8X72FWK');
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Gochi+Hand&display=swap" rel="stylesheet">
@@ -327,6 +334,14 @@
     const a = document.getElementById("beta-link");
     a.href = BETA_FORM_URL; a.target = "_blank"; a.rel = "noopener";
   }
+  // Count clicks on any "Try it free" button; the signup-section button counts as a lead.
+  document.querySelectorAll('a.btn').forEach(function (el) {
+    el.addEventListener('click', function () {
+      if (typeof gtag !== 'function') return;
+      if (el.id === 'beta-link') gtag('event', 'generate_lead', { method: 'signup_form' });
+      else gtag('event', 'try_it_free_click', { location: el.closest('header') ? 'header' : 'hero' });
+    });
+  });
 </script>
 </body>
 </html>
