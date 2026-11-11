@@ -164,6 +164,34 @@
   .steps b { font-weight: 800; }
   .fine { font-size: 15px; color: var(--muted); margin: 14px 0 0; }
 
+  /* Signup form, right on the page */
+  .signup { scroll-margin-top: 84px; background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 26px 22px 24px; box-shadow: 0 24px 44px -28px rgba(34,38,43,.35); }
+  .signup h3 { margin: 0 0 4px; font-size: 24px; font-weight: 800; font-stretch: 108%; }
+  .signup .sub { margin: 0 0 18px; font-size: 15px; color: var(--muted); }
+  .field { margin-bottom: 16px; }
+  .field label, .field legend { display: block; font-size: 15px; font-weight: 700; margin-bottom: 6px; padding: 0; }
+  .field input[type=text], .field input[type=tel] {
+    width: 100%; font: inherit; font-size: 17px; color: var(--charcoal);
+    padding: 13px 14px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--paper);
+  }
+  .field input:focus { outline: none; border-color: var(--brown); box-shadow: 0 0 0 3px rgba(181,96,63,.18); background: #fff; }
+  fieldset.field { border: 0; margin: 0 0 16px; padding: 0; min-width: 0; }
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pills label { margin: 0; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1.5px solid var(--line); border-radius: 99px; background: var(--paper); font-size: 15px; font-weight: 600; cursor: pointer; }
+  .pills input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .pills input:checked + span { color: #fff; }
+  .pills label:has(input:checked) { background: var(--brown); border-color: var(--brown); color: #fff; }
+  .pills label:has(input:focus-visible) { outline: 3px solid var(--amber); outline-offset: 2px; }
+  #other-work { margin-top: 10px; }
+  .signup .btn { width: 100%; border: 0; cursor: pointer; font-family: inherit; margin-top: 4px; }
+  .signup .btn[disabled] { opacity: .7; cursor: default; }
+  .form-error { color: #A12C2C; font-size: 15px; font-weight: 600; margin: 10px 0 0; min-height: 1px; }
+  .thanks { text-align: center; padding: 18px 6px 8px; }
+  .thanks .check { width: 56px; height: 56px; border-radius: 50%; background: var(--brown); color: #fff; display: grid; place-items: center; margin: 0 auto 14px; }
+  .thanks h3 { margin: 0 0 6px; font-size: 26px; font-weight: 800; }
+  .thanks p { margin: 0; color: var(--oil); }
+  [hidden] { display: none !important; }
+
   /* Founder story */
   .story { background: var(--charcoal); color: var(--paper); padding: 72px 0; }
   .story blockquote { margin: 0 0 20px; font-family: "Gochi Hand", cursive; font-size: 32px; line-height: 1.2; color: var(--amber); }
@@ -207,7 +235,7 @@
 <header class="top">
   <div class="wrap">
     <a class="mark" href="#" aria-label="QuickTurn home">QuickTurn</a>
-    <a class="btn btn-small js-try" href="mailto:getquickturn@gmail.com?subject=Try%20QuickTurn%20free">Try it free</a>
+    <a class="btn btn-small js-try" href="#signup">Try it free</a>
   </div>
 </header>
 
@@ -218,7 +246,7 @@
       <span class="tag">Built for mobile diesel mechanics</span>
       <h1>Stop doing invoices <span class="soft">at the kitchen table.</span></h1>
       <p class="lead">Talk through the job. Get the invoice.</p>
-      <a class="btn js-try" href="mailto:getquickturn@gmail.com?subject=Try%20QuickTurn%20free">Try it free</a>
+      <a class="btn js-try" href="#signup">Try it free</a>
       <p class="note">No card needed. We'll set it up with you in 10 minutes.</p>
       <a class="more" href="#before" aria-label="See how it works">See how it works<span aria-hidden="true">&#8964;</span></a>
     </div>
@@ -274,7 +302,41 @@
         <li><span><b>Check</b> the invoice</span></li>
         <li><span><b>Send</b> it and get paid</span></li>
       </ol>
-      <a class="btn" id="beta-link" href="mailto:getquickturn@gmail.com?subject=Try%20QuickTurn%20free">Try it free</a>
+      <form class="signup" id="signup" novalidate>
+        <div id="signup-fields">
+          <h3>Try it free</h3>
+          <p class="sub">Takes 30 seconds. We'll text you to get set up.</p>
+          <div class="field">
+            <label for="su-name">Your name</label>
+            <input type="text" id="su-name" name="name" autocomplete="name" required>
+          </div>
+          <div class="field">
+            <label for="su-phone">Phone number</label>
+            <input type="tel" id="su-phone" name="phone" autocomplete="tel" inputmode="tel" placeholder="801-555-0123" required>
+          </div>
+          <fieldset class="field">
+            <legend>What kind of work do you mostly do?</legend>
+            <div class="pills">
+              <label><input type="radio" name="work" value="Diesel / semi trucks"><span>Diesel / semi trucks</span></label>
+              <label><input type="radio" name="work" value="Fleet vehicles"><span>Fleet vehicles</span></label>
+              <label><input type="radio" name="work" value="Heavy equipment"><span>Heavy equipment</span></label>
+              <label><input type="radio" name="work" value="Cars and light trucks"><span>Cars and light trucks</span></label>
+              <label><input type="radio" name="work" value="__other__"><span>Something else</span></label>
+            </div>
+            <div id="other-wrap" hidden>
+              <label for="other-work" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">What kind of work?</label>
+              <input type="text" id="other-work" name="other" placeholder="Tell us what you work on">
+            </div>
+          </fieldset>
+          <button class="btn" id="beta-link" type="submit">Try it free</button>
+          <p class="form-error" id="form-error" role="alert"></p>
+        </div>
+        <div class="thanks" id="signup-thanks" hidden tabindex="-1">
+          <div class="check" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></div>
+          <h3>You're in.</h3>
+          <p>We'll text you soon to get QuickTurn set up.</p>
+        </div>
+      </form>
       <p class="fine">Free while we build it. No card. We'll set it up with you in 10 minutes.<br>
       All we ask: use it on real jobs and give us some feedback!</p>
       <p class="fine">Or text TRY to <a href="sms:+18019953665?&body=TRY">801-995-3665</a> and we will reach out.</p>
@@ -313,20 +375,71 @@
 </footer>
 
 <script>
-  // Every "Try it free" button goes straight to the signup form; if it's ever empty, they fall back to email.
-  const BETA_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe_pJ582UFbhhoA04wk8T_OfUpHU44mtJqO6i6vG0-fwETcfg/viewform";
-  if (BETA_FORM_URL) {
-    document.querySelectorAll('#beta-link, .js-try').forEach(function (a) {
-      a.href = BETA_FORM_URL; a.target = "_blank"; a.rel = "noopener";
+  // The on-page form sends answers to the same Google Form as before, so responses land in the same place.
+  const FORM_ID = "1FAIpQLSe_pJ582UFbhhoA04wk8T_OfUpHU44mtJqO6i6vG0-fwETcfg";
+  const FORM_POST = "https://docs.google.com/forms/d/e/" + FORM_ID + "/formResponse";
+  const FORM_PAGE = "https://docs.google.com/forms/d/e/" + FORM_ID + "/viewform";
+  const ENTRY = { name: "entry.658159335", phone: "entry.1613072008", work: "entry.1036059815" };
+
+  const form = document.getElementById('signup');
+  const nameInput = document.getElementById('su-name');
+  const errorBox = document.getElementById('form-error');
+  const otherWrap = document.getElementById('other-wrap');
+  const otherInput = document.getElementById('other-work');
+
+  // "Try it free" buttons scroll down to the form and put the cursor in the first box.
+  document.querySelectorAll('a.js-try').forEach(function (el) {
+    el.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      if (typeof gtag === 'function') gtag('event', 'try_it_free_click', { location: el.closest('header') ? 'header' : 'hero' });
+      const closeWrap = document.querySelector('#beta > .wrap');
+      if (!closeWrap.classList.contains('in')) { closeWrap.style.transition = 'none'; closeWrap.classList.add('in'); }
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(function () { nameInput.focus({ preventScroll: true }); }, 600);
     });
-  }
-  // Count clicks on any "Try it free" button; the closing button counts as a lead.
-  document.querySelectorAll('a.btn').forEach(function (el) {
-    el.addEventListener('click', function () {
-      if (typeof gtag !== 'function') return;
-      if (el.id === 'beta-link') gtag('event', 'generate_lead', { method: 'signup_form' });
-      else gtag('event', 'try_it_free_click', { location: el.closest('header') ? 'header' : 'hero' });
-    });
+  });
+
+  form.addEventListener('change', function () {
+    const picked = form.querySelector('input[name=work]:checked');
+    otherWrap.hidden = !(picked && picked.value === '__other__');
+    errorBox.textContent = '';
+  });
+  form.addEventListener('input', function () { errorBox.textContent = ''; });
+
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    const name = nameInput.value.trim();
+    const phone = document.getElementById('su-phone').value.trim();
+    const picked = form.querySelector('input[name=work]:checked');
+    const other = otherInput.value.trim();
+    if (!name) { errorBox.textContent = 'Add your name so we know who to text.'; nameInput.focus(); return; }
+    if (phone.replace(/\D/g, '').length < 10) { errorBox.textContent = 'Add a phone number we can text, with area code.'; document.getElementById('su-phone').focus(); return; }
+    if (!picked) { errorBox.textContent = 'Pick the kind of work you mostly do.'; return; }
+    if (picked.value === '__other__' && !other) { errorBox.textContent = 'Tell us what kind of work you do.'; otherInput.focus(); return; }
+
+    const data = new URLSearchParams();
+    data.append(ENTRY.name, name);
+    data.append(ENTRY.phone, phone);
+    if (picked.value === '__other__') {
+      data.append(ENTRY.work, '__other_option__');
+      data.append(ENTRY.work + '.other_option_response', other);
+    } else {
+      data.append(ENTRY.work, picked.value);
+    }
+
+    const btn = document.getElementById('beta-link');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    fetch(FORM_POST, { method: 'POST', mode: 'no-cors', body: data })
+      .then(function () {
+        if (typeof gtag === 'function') gtag('event', 'generate_lead', { method: 'signup_form' });
+        document.getElementById('signup-fields').hidden = true;
+        const thanks = document.getElementById('signup-thanks');
+        thanks.hidden = false; thanks.focus();
+      })
+      .catch(function () {
+        btn.disabled = false; btn.textContent = 'Try it free';
+        errorBox.innerHTML = 'That didn’t go through. Check your connection, or <a href="' + FORM_PAGE + '" target="_blank" rel="noopener">sign up here</a> instead.';
+      });
   });
   // Firm up the header once the page scrolls.
   const topBar = document.querySelector('.top');
