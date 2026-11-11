@@ -152,6 +152,13 @@
   .invoice tr.total td { border-bottom: 0; font-weight: 800; font-size: 18px; padding-top: 10px; }
   .invoice .status { display: inline-block; margin-top: 10px; font-size: 13px; font-weight: 700; color: var(--brown-deep); background: var(--cream); padding: 3px 10px; border-radius: 99px; }
 
+  /* 4b. Demo video */
+  #demo .wrap { max-width: 920px; }
+  .demo { margin: 0; }
+  .demo video { display: block; width: 100%; height: auto; border-radius: 14px; background: #16233F; box-shadow: 0 24px 40px -24px rgba(0,0,0,.8); }
+  .demo figcaption { margin-top: 12px; font-size: 14px; color: #B8BEC6; text-align: center; }
+  @media (max-width: 640px) { .demo { max-width: 340px; margin: 0 auto; } }
+
   /* 5. How it works + close */
   .close h2 { font-stretch: 112%; font-weight: 800; font-size: clamp(32px, 6vw, 44px); line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 28px; }
   .steps { list-style: none; padding: 0; margin: 0 0 36px; counter-reset: step; }
@@ -256,9 +263,9 @@
   <section class="screen tile" id="before">
     <div class="wrap"><div class="panel panel-paper">
       <p class="caption reveal">Hours get lost on scraps like this.</p>
-      <div class="scrap reveal" aria-label="A handwritten job note: Bowman Trucking number 214, Cascadia, turbo actuator, regen, 3.5 hours with question marks, plus road call">
+      <div class="scrap reveal" aria-label="A handwritten job note: Ridgeline Freight number 214, Cascadia, turbo actuator, regen, 3.5 hours with question marks, plus road call">
         <span class="smudge" aria-hidden="true"></span>
-        Bowman Trkg #214<br>
+        Ridgeline #214<br>
         Cascadia, turbo actuator<br>
         regen, 3.5 hr?? + road call
       </div>
@@ -271,7 +278,7 @@
       <p class="caption reveal">Just talk through the job from your truck.</p>
       <div class="voice reveal">
         <div class="who"><span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span> Voice note from the service truck</div>
-        “Bowman Trucking, unit 214. Replaced the turbo actuator, ran a forced regen. Three and a half hours plus the road call. PO 5531.”
+        “Ridgeline Freight, unit 214. Replaced the turbo actuator, ran a forced regen. Three and a half hours plus the road call. PO 5531.”
       </div>
     </div></div>
   </section>
@@ -281,7 +288,7 @@
     <div class="wrap"><div class="panel panel-glow">
       <p class="caption reveal">Every hour billed. Done before you pull out.</p>
       <div class="invoice reveal">
-        <header><b>Invoice #1042</b><span>Bowman Trucking, Unit 214</span></header>
+        <header><b>Invoice #1042</b><span>Ridgeline Freight, Unit 214</span></header>
         <table>
           <tr><td>Turbo actuator</td><td>$865.00</td></tr>
           <tr><td>Road call</td><td>$150.00</td></tr>
@@ -290,6 +297,21 @@
         </table>
         <span class="status">Ready for you to check and send</span>
       </div>
+    </div></div>
+  </section>
+
+  <!-- 4b. Watch it happen -->
+  <section class="screen tile" id="demo">
+    <div class="wrap"><div class="panel panel-dark">
+      <p class="caption reveal">Watch it happen, start to finish.</p>
+      <figure class="demo reveal">
+        <video autoplay muted loop playsinline preload="metadata" poster="media/quickturn-demo-wide.jpg"
+               aria-label="Demo: a mechanic texts the job, a voice note and a receipt photo, and QuickTurn AI turns it into an invoice with a pay link.">
+          <source src="media/quickturn-demo-vertical.mp4" type="video/mp4" media="(max-width: 640px)">
+          <source src="media/quickturn-demo-wide.mp4" type="video/mp4">
+        </video>
+        <figcaption>Early preview of the QuickTurn beta.</figcaption>
+      </figure>
     </div></div>
   </section>
 
