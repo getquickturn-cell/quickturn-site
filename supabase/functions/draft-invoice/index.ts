@@ -13,9 +13,9 @@
 function secret(...names: string[]): string {
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
   const env = Deno.env.toObject();
-  for (const n of names) if (env[n]) return env[n];
+  for (const n of names) if (env[n]?.trim()) return env[n].trim();
   const wanted = names.map(norm);
-  for (const [k, v] of Object.entries(env)) if (v && wanted.includes(norm(k))) return v;
+  for (const [k, v] of Object.entries(env)) if (v?.trim() && wanted.includes(norm(k))) return v.trim();
   return "";
 }
 

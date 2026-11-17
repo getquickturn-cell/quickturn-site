@@ -13,9 +13,9 @@
 function secret(...names: string[]): string {
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
   const env = Deno.env.toObject();
-  for (const n of names) if (env[n]) return env[n];
+  for (const n of names) if (env[n]?.trim()) return env[n].trim();
   const wanted = names.map(norm);
-  for (const [k, v] of Object.entries(env)) if (v && wanted.includes(norm(k))) return v;
+  for (const [k, v] of Object.entries(env)) if (v?.trim() && wanted.includes(norm(k))) return v.trim();
   return "";
 }
 
@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
     const publicUrl = `${supaUrl}/functions/v1/sms-inbound`;
     const sig = req.headers.get("X-Twilio-Signature") ?? "";
     if (!token || !(await validTwilioSignature(publicUrl, params, sig, token))) {
-      console.error("Rejected: bad or missing Twilio signature");
+      console.error("Rejected: bad or missing Twilio signature", JSON.stringify({ tokenFound: !!token, tokenLength: token.length, hasSignature: !!sig, twilioSecretNames: Object.keys(Deno.env.toObject()).filter((k) => /t?w?ilio|auth/i.test(k)) }));
       return new Response("Forbidden", { status: 403 });
     }
 
