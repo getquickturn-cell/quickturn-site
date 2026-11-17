@@ -109,12 +109,18 @@
     </details>
 
     <div class="card">
-      <h2>1. Paste the job (optional AI help)</h2>
-      <p class="hint">Paste the mechanic's texts or voice-note transcript, copy the prompt into Claude, then paste Claude's answer back.</p>
-      <div class="row"><textarea id="rawNotes" placeholder="e.g. Ridgeline Freight unit 214, Cascadia. Replaced turbo actuator, forced regen. 3.5 hrs + road call, about 40 min drive. PO 5531. Parts: actuator 612.00 from FleetPride…"></textarea></div>
-      <div class="btns" style="margin-bottom:10px"><button class="btn small" id="copyPromptBtn">Copy prompt for Claude</button></div>
-      <div class="row"><textarea id="aiAnswer" placeholder="Paste Claude's answer (the JSON) here"></textarea></div>
-      <div class="btns"><button class="btn small ghost" id="fillBtn">Fill the invoice from Claude's answer</button></div>
+      <h2>1. The job</h2>
+      <p class="hint">Paste the mechanic's texts or voice-note transcript and add photos of their parts receipts. QuickTurn AI fills in the invoice; you check every line.</p>
+      <div id="authBox" class="no-print" style="margin-bottom:12px"></div>
+      <div class="row"><textarea id="rawNotes" placeholder="e.g. Ridgeline Freight unit 214, Cascadia. Replaced turbo actuator, forced regen. 3.5 hrs + road call, about 40 min drive. PO 5531."></textarea></div>
+      <div class="row"><div><label for="photoInput">Receipt photos (up to 6)</label><input type="file" id="photoInput" accept="image/*" multiple></div></div>
+      <div id="photoList" class="hint" style="margin-top:-4px"></div>
+      <div class="btns"><button class="btn" id="aiDraftBtn">Draft with QuickTurn AI</button><span id="aiStatus" class="hint" style="align-self:center;margin:0"></span></div>
+      <details style="margin-top:12px"><summary class="hint" style="cursor:pointer;margin:0">No AI connection? Use Claude by hand</summary>
+        <div class="btns" style="margin:10px 0"><button class="btn small ghost" id="copyPromptBtn">Copy prompt for Claude</button></div>
+        <div class="row"><textarea id="aiAnswer" placeholder="Paste Claude's answer (the JSON) here"></textarea></div>
+        <div class="btns"><button class="btn small ghost" id="fillBtn">Fill the invoice from Claude's answer</button></div>
+      </details>
     </div>
 
     <div class="card">
@@ -176,6 +182,7 @@
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script src="config.js"></script>
 <script>
 (() => {
   const KEY = 'qt_invoice_builder_v1';
@@ -406,6 +413,10 @@ ${notes}
     const raw = $('#aiAnswer').value; const m = raw.match(/\{[\s\S]*\}/);
     if (!m) { toast('No JSON found in that answer'); return; }
     let d; try { d = JSON.parse(m[0]); } catch (e) { toast('Could not read that JSON: ask Claude to return only JSON'); return; }
+    applyDraft(d);
+  });
+
+  function applyDraft(d) {
     const j = job();
     ['billTo', 'billContact', 'billAddress', 'po', 'unit', 'vehicle', 'vin', 'mileage', 'work', 'note'].forEach(k => { if (d[k]) j[k] = String(d[k]); });
     if (d.date && /^\d{4}-\d{2}-\d{2}$/.test(d.date)) j.date = d.date;
@@ -416,10 +427,104 @@ ${notes}
     if (Array.isArray(d.extras)) j.extras = d.extras.filter(x => x && (x.desc || x.amount)).map(x => ({ desc: String(x.desc || ''), amount: num(x.amount) || '' }));
     persist(); renderJobForm(); renderInvoice();
     const qs = Array.isArray(d.questions) ? d.questions.filter(Boolean) : [];
-    toast(qs.length ? 'Filled. Check: ' + qs.join(' · ') : 'Filled from Claude: review every line');
+    toast(qs.length ? 'Filled. Check: ' + qs.join(' · ') : 'Filled: review every line');
+    return qs;
+  }
+
+  // ---------- QuickTurn AI (Supabase sign-in + draft-invoice function) ----------
+  const CFG = window.QT_CONFIG || {};
+  const AI_ON = !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
+  const SKEY = 'qt_session_v1';
+  let session = null;
+  try { session = JSON.parse(localStorage.getItem(SKEY)); } catch (e) {}
+  const saveSession = (s) => { session = s; try { s ? localStorage.setItem(SKEY, JSON.stringify(s)) : localStorage.removeItem(SKEY); } catch (e) {} };
+
+  // A magic-link sign-in returns the session in the URL hash.
+  (function readHash() {
+    if (!location.hash.includes('access_token=')) return;
+    const h = new URLSearchParams(location.hash.slice(1));
+    saveSession({ access_token: h.get('access_token'), refresh_token: h.get('refresh_token'), expires_at: Math.floor(Date.now() / 1000) + (parseInt(h.get('expires_in'), 10) || 3600), email: '' });
+    history.replaceState(null, '', location.pathname + location.search);
+  })();
+
+  async function authFetch(path, opts = {}) {
+    return fetch(CFG.supabaseUrl.replace(/\/$/, '') + path, { ...opts, headers: { apikey: CFG.supabaseAnonKey, 'Content-Type': 'application/json', ...(opts.headers || {}) } });
+  }
+  async function validToken() {
+    if (!session) return null;
+    if (session.expires_at - 60 > Date.now() / 1000) return session.access_token;
+    const r = await authFetch('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: JSON.stringify({ refresh_token: session.refresh_token }) });
+    if (!r.ok) { saveSession(null); renderAuth(); return null; }
+    const d = await r.json();
+    saveSession({ access_token: d.access_token, refresh_token: d.refresh_token, expires_at: d.expires_at || Math.floor(Date.now() / 1000) + (d.expires_in || 3600), email: d.user?.email || session.email });
+    return session.access_token;
+  }
+  async function loadEmail() {
+    const t = await validToken(); if (!t) return;
+    const r = await authFetch('/auth/v1/user', { headers: { Authorization: 'Bearer ' + t } });
+    if (r.ok) { const u = await r.json(); session.email = u.email || ''; saveSession(session); renderAuth(); }
+  }
+  function renderAuth() {
+    const box = $('#authBox'), btn = $('#aiDraftBtn');
+    if (!AI_ON) { box.innerHTML = '<div class="warn" style="margin:0">QuickTurn AI isn\'t connected yet. Use "Claude by hand" below for now.</div>'; btn.disabled = true; btn.style.opacity = .5; return; }
+    btn.disabled = false; btn.style.opacity = 1;
+    if (session) {
+      box.innerHTML = `<div class="hint" style="margin:0">Signed in${session.email ? ' as <b>' + esc(session.email) + '</b>' : ''} · <a href="#" id="signOut">Sign out</a></div>`;
+      $('#signOut').addEventListener('click', (e) => { e.preventDefault(); saveSession(null); renderAuth(); toast('Signed out'); });
+    } else {
+      box.innerHTML = `<label for="loginEmail">Sign in to use QuickTurn AI</label><div class="btns"><input id="loginEmail" type="email" placeholder="you@email.com" style="flex:1;min-width:180px"><button class="btn small" id="loginBtn">Email me a sign-in link</button></div>`;
+      $('#loginBtn').addEventListener('click', async () => {
+        const email = $('#loginEmail').value.trim(); if (!email) { toast('Enter your email'); return; }
+        const redirect = location.origin + location.pathname;
+        const r = await authFetch('/auth/v1/otp?redirect_to=' + encodeURIComponent(redirect), { method: 'POST', body: JSON.stringify({ email, create_user: false }) });
+        toast(r.ok ? 'Check your email for the sign-in link' : 'That email isn\'t set up yet. Ask Aaron to invite you.');
+      });
+    }
+  }
+
+  // Receipt photos: shrink in the browser before sending.
+  let photos = [];
+  function shrink(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image(); const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const max = 1600, s = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+        resolve({ media_type: 'image/jpeg', data: c.toDataURL('image/jpeg', 0.82).split(',')[1], name: file.name });
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('bad image')); };
+      img.src = url;
+    });
+  }
+  $('#photoInput').addEventListener('change', async (e) => {
+    const files = [...e.target.files].slice(0, 6); photos = [];
+    for (const f of files) { try { photos.push(await shrink(f)); } catch (err) { toast('Could not read ' + f.name); } }
+    $('#photoList').textContent = photos.length ? photos.length + ' photo(s) ready: ' + photos.map(p => p.name).join(', ') : '';
+  });
+
+  $('#aiDraftBtn').addEventListener('click', async () => {
+    if (!AI_ON) return;
+    const notes = $('#rawNotes').value.trim();
+    if (!notes && !photos.length) { toast('Add job notes or a receipt photo first'); return; }
+    const t = await validToken(); if (!t) { toast('Sign in first'); renderAuth(); return; }
+    const btn = $('#aiDraftBtn'); btn.disabled = true; $('#aiStatus').textContent = 'QuickTurn AI is drafting…';
+    try {
+      const r = await fetch(CFG.supabaseUrl.replace(/\/$/, '') + '/functions/v1/draft-invoice', {
+        method: 'POST', headers: { Authorization: 'Bearer ' + t, apikey: CFG.supabaseAnonKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes, images: photos.map(({ media_type, data }) => ({ media_type, data })) }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.draft) { $('#aiStatus').textContent = d.error || 'Drafting failed. Try again.'; return; }
+      const qs = applyDraft(d.draft);
+      $('#aiStatus').textContent = qs && qs.length ? 'Drafted. Confirm with the mechanic: ' + qs.join(' · ') : 'Drafted. Check every line before sending.';
+    } catch (err) { $('#aiStatus').textContent = 'Could not reach QuickTurn AI. Check your connection.'; }
+    finally { btn.disabled = false; }
   });
 
   renderAll();
+  renderAuth();
+  if (AI_ON && session && !session.email) loadEmail();
 })();
 </script>
 </body>
