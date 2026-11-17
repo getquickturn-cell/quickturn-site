@@ -76,6 +76,11 @@ Deno.serve(async (req) => {
     const m = await fetch(`${supaUrl}/rest/v1/mechanics?select=id&sms_phone=eq.${encodeURIComponent(from)}&limit=1`, { headers });
     const mech = m.ok ? (await m.json())[0] : null;
 
+    // First text ever from this number? They get the opt-in confirmation promised in our carrier registration.
+    const prior = await fetch(`${supaUrl}/rest/v1/inbound_messages?select=id&from_phone=eq.${encodeURIComponent(from)}&limit=1`, { headers });
+    const firstText = prior.ok ? (await prior.json()).length === 0 : false;
+    const WELCOME = "QuickTurn LLC: Thanks for texting! We'll turn your job notes into invoices. Msg frequency varies. Msg & data rates may apply. Reply HELP for help, STOP to opt out.";
+
     const ins = await fetch(`${supaUrl}/rest/v1/inbound_messages`, {
       method: "POST",
       headers: { ...headers, Prefer: "resolution=ignore-duplicates" },
@@ -83,8 +88,12 @@ Deno.serve(async (req) => {
     });
     if (!ins.ok) console.error("Insert failed", ins.status, await ins.text());
 
-    if (!mech) return twiml("This is QuickTurn. We don't recognize this number yet. Reply with your name and business and we'll get you set up.");
-    if (/^\s*done\s*[.!]*\s*$/i.test(body)) return twiml("Got it! We're putting your invoice together and will text it to you to approve. - QuickTurn");
+    const isDone = /^\s*done\s*[.!]*\s*$/i.test(body);
+    if (!mech) return twiml(firstText
+      ? WELCOME + " We don't recognize this number yet, so reply with your name and business and we'll get you set up."
+      : "QuickTurn: We don't recognize this number yet. Reply with your name and business and we'll get you set up.");
+    if (firstText) return twiml(WELCOME);
+    if (isDone) return twiml("QuickTurn: Got it! We're putting your invoice together and will text it to you to approve. Reply STOP to opt out.");
     return twiml();
   } catch (e) {
     console.error(e);
