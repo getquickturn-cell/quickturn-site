@@ -86,11 +86,12 @@
 <body>
 <header class="top">
   <b>Quick<span>Turn</span> Invoice Builder</b>
+  <span id="cloudStatus" style="font-size:12px;color:#B8BEC6"></span>
   <label for="profileSel" style="color:#B8BEC6;margin:0">Mechanic</label>
   <select id="profileSel" aria-label="Choose mechanic"></select>
   <button class="btn small ghost" id="newProfileBtn">+ Mechanic</button>
   <div class="sp"></div>
-  <span style="font-size:12px;color:#B8BEC6">Saved only in this browser. Back up weekly.</span>
+  <span id="saveNote" style="font-size:12px;color:#B8BEC6">Saved only in this browser. Back up weekly.</span>
 </header>
 
 <main>
@@ -100,6 +101,7 @@
       <p class="hint">The invoice comes from this mechanic's business. Payments go to them, not QuickTurn.</p>
       <div class="row r2"><div><label>Business name</label><input data-p="businessName"></div><div><label>Owner name</label><input data-p="ownerName"></div></div>
       <div class="row r2"><div><label>Phone</label><input data-p="phone"></div><div><label>Email</label><input data-p="email"></div></div>
+      <div class="row"><div><label>Cell they text QuickTurn from (if different)</label><input data-p="textFrom" placeholder="Matches their texts to this profile"></div></div>
       <div class="row"><div><label>Business address</label><input data-p="address"></div></div>
       <div class="row r3"><div><label>Labor rate ($/hr)</label><input type="number" step="0.01" data-p="laborRate"></div><div><label>Drive rate ($/hr)</label><input type="number" step="0.01" data-p="driveRate"></div><div><label>Road-call fee ($)</label><input type="number" step="0.01" data-p="roadCallFee"></div></div>
       <div class="row r3"><div><label>Parts markup (%)</label><input type="number" step="0.1" data-p="partsMarkup"></div><div><label>Sales tax on parts (%)</label><input type="number" step="0.001" data-p="partsTax"></div><div><label>Shop supplies ($ per job)</label><input type="number" step="0.01" data-p="shopSupplies"></div></div>
@@ -107,6 +109,13 @@
       <div class="row"><div><label>How customers pay (printed on invoice)</label><textarea data-p="payInstructions" placeholder="Check payable to … · Venmo @… · Card: call 801-…"></textarea></div></div>
       <div class="btns"><button class="btn ghost small" id="delProfileBtn">Delete this mechanic</button></div>
     </details>
+
+    <div class="card" id="inboxCard" hidden>
+      <h2>Inbox: texts from mechanics</h2>
+      <p class="hint">Texts and photos sent to the QuickTurn number. Check the ones for one job, then draft.</p>
+      <div id="inboxList"></div>
+      <div class="btns" style="margin-top:10px"><button class="btn small" id="inboxDraftBtn">Draft invoice from checked texts</button><button class="btn small ghost" id="inboxIgnoreBtn">Ignore checked</button><button class="btn small ghost" id="inboxRefreshBtn">Refresh</button></div>
+    </div>
 
     <div class="card">
       <h2>1. The job</h2>
@@ -299,29 +308,30 @@
     else if (el.dataset.extra !== undefined) { job().extras[+el.dataset.extra][el.dataset.k] = el.value; }
     else return;
     persist(); renderInvoice();
+    if (el.dataset.p) cloudQueueMechanic(profile());
   });
   document.addEventListener('change', (e) => {
     const el = e.target;
     if (el.dataset.j && el.type === 'checkbox') { job()[el.dataset.j] = el.checked; persist(); renderInvoice(); }
-    if (el.dataset.status) { const inv = state.invoices.find(i => i.id === el.dataset.status); if (inv) { inv.status = el.value; persist(); toast('Marked ' + el.value); } }
+    if (el.dataset.status) { const inv = state.invoices.find(i => i.id === el.dataset.status); if (inv) { inv.status = el.value; persist(); cloudUpsertInvoice(inv); toast('Marked ' + el.value); } }
   });
   document.addEventListener('click', (e) => {
     const t = e.target.closest('button'); if (!t) return;
     if (t.dataset.delpart !== undefined) { job().parts.splice(+t.dataset.delpart, 1); persist(); renderJobForm(); renderInvoice(); }
     if (t.dataset.delextra !== undefined) { job().extras.splice(+t.dataset.delextra, 1); persist(); renderJobForm(); renderInvoice(); }
     if (t.dataset.open) { const inv = state.invoices.find(i => i.id === t.dataset.open); if (inv) { state.draft = JSON.parse(JSON.stringify(inv.job)); state.editingId = inv.id; persist(); renderJobForm(); renderInvoice(); toast('Opened invoice #' + inv.number); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
-    if (t.dataset.del) { const inv = state.invoices.find(i => i.id === t.dataset.del); if (inv && confirmDelete('invoice #' + inv.number)) { state.invoices = state.invoices.filter(i => i.id !== inv.id); if (state.editingId === inv.id) state.editingId = null; persist(); renderHistory(); renderInvoice(); } }
+    if (t.dataset.del) { const inv = state.invoices.find(i => i.id === t.dataset.del); if (inv && confirmDelete('invoice #' + inv.number)) { state.invoices = state.invoices.filter(i => i.id !== inv.id); if (state.editingId === inv.id) state.editingId = null; persist(); cloudDelete('invoices', inv.id); renderHistory(); renderInvoice(); } }
   });
   // In-page confirmation (no browser dialogs): click delete twice within 3s.
   const pending = {};
   function confirmDelete(what) { const now = Date.now(); if (pending[what] && now - pending[what] < 3000) { delete pending[what]; return true; } pending[what] = now; toast('Click ✕ again to delete ' + what); return false; }
 
   $('#profileSel').addEventListener('change', (e) => { state.currentId = e.target.value; state.editingId = null; persist(); renderAll(); });
-  $('#newProfileBtn').addEventListener('click', () => { const p = blankProfile(); state.profiles.push(p); state.currentId = p.id; state.editingId = null; persist(); renderAll(); $('#profileCard').open = true; toast('New mechanic added: fill in the profile'); });
+  $('#newProfileBtn').addEventListener('click', () => { const p = blankProfile(); state.profiles.push(p); state.currentId = p.id; state.editingId = null; persist(); cloudQueueMechanic(p); renderAll(); $('#profileCard').open = true; toast('New mechanic added: fill in the profile'); });
   $('#delProfileBtn').addEventListener('click', () => {
     if (state.profiles.length < 2) { toast('Keep at least one mechanic'); return; }
     const p = profile(); if (!confirmDelete('mechanic ' + p.businessName)) return;
-    state.profiles = state.profiles.filter(x => x.id !== p.id); state.invoices = state.invoices.filter(i => i.profileId !== p.id); state.currentId = state.profiles[0].id; persist(); renderAll(); toast('Mechanic deleted');
+    state.profiles = state.profiles.filter(x => x.id !== p.id); state.invoices = state.invoices.filter(i => i.profileId !== p.id); cloudDelete('mechanics', p.id); state.currentId = state.profiles[0].id; persist(); renderAll(); toast('Mechanic deleted');
   });
   $('#addPartBtn').addEventListener('click', () => { job().parts.push({ desc: '', qty: 1, cost: '' }); persist(); renderJobForm(); });
   $('#addExtraBtn').addEventListener('click', () => { job().extras.push({ desc: '', amount: '' }); persist(); renderJobForm(); });
@@ -332,10 +342,10 @@
     const p = profile(), c = calc(p, job());
     if (state.editingId) {
       const inv = state.invoices.find(i => i.id === state.editingId);
-      if (inv) { inv.job = JSON.parse(JSON.stringify(job())); inv.total = c.total; persist(); renderHistory(); toast('Updated invoice #' + inv.number); return; }
+      if (inv) { inv.job = JSON.parse(JSON.stringify(job())); inv.total = c.total; persist(); renderHistory(); cloudUpsertInvoice(inv); linkMessages(inv.id); toast('Updated invoice #' + inv.number); return; }
     }
     const inv = { id: uid(), profileId: p.id, number: num(p.nextNumber) || 1001, job: JSON.parse(JSON.stringify(job())), total: c.total, status: 'Draft', savedAt: new Date().toISOString() };
-    state.invoices.push(inv); p.nextNumber = inv.number + 1; state.editingId = inv.id; persist(); renderProfiles(); renderHistory(); renderInvoice(); toast('Saved invoice #' + inv.number);
+    state.invoices.push(inv); p.nextNumber = inv.number + 1; state.editingId = inv.id; persist(); renderProfiles(); renderHistory(); renderInvoice(); cloudQueueMechanic(p); cloudUpsertInvoice(inv); linkMessages(inv.id); toast('Saved invoice #' + inv.number);
   });
 
   async function copy(text, msg) {
@@ -380,7 +390,7 @@
   $('#backupBtn').addEventListener('click', () => { download(`quickturn_invoice_backup_${today()}.json`, JSON.stringify(state, null, 2), 'application/json'); toast('Backup downloaded'); });
   $('#restoreInput').addEventListener('change', async (e) => {
     const f = e.target.files[0]; if (!f) return;
-    try { const s = JSON.parse(await f.text()); if (!s.profiles || !s.profiles.length) throw 0; state = s; if (!state.draft) state.draft = blankJob(); persist(); renderAll(); toast('Backup restored'); }
+    try { const s = JSON.parse(await f.text()); if (!s.profiles || !s.profiles.length) throw 0; state = s; if (!state.draft) state.draft = blankJob(); persist(); renderAll(); cloudPushAll(); toast('Backup restored'); }
     catch (err) { toast('That file is not a QuickTurn backup'); }
     e.target.value = '';
   });
@@ -470,7 +480,7 @@ ${notes}
     btn.disabled = false; btn.style.opacity = 1;
     if (session) {
       box.innerHTML = `<div class="hint" style="margin:0">Signed in${session.email ? ' as <b>' + esc(session.email) + '</b>' : ''} · <a href="#" id="signOut">Sign out</a></div>`;
-      $('#signOut').addEventListener('click', (e) => { e.preventDefault(); saveSession(null); renderAuth(); toast('Signed out'); });
+      $('#signOut').addEventListener('click', (e) => { e.preventDefault(); saveSession(null); renderAuth(); $('#inboxCard').hidden = true; setCloud(''); $('#saveNote').textContent = 'Saved only in this browser. Back up weekly.'; toast('Signed out'); });
     } else {
       box.innerHTML = `<label for="loginEmail">Sign in to use QuickTurn AI</label><div class="btns"><input id="loginEmail" type="email" placeholder="you@email.com" style="flex:1;min-width:180px"><button class="btn small" id="loginBtn">Email me a sign-in link</button></div>`;
       $('#loginBtn').addEventListener('click', async () => {
@@ -506,13 +516,13 @@ ${notes}
   $('#aiDraftBtn').addEventListener('click', async () => {
     if (!AI_ON) return;
     const notes = $('#rawNotes').value.trim();
-    if (!notes && !photos.length) { toast('Add job notes or a receipt photo first'); return; }
+    if (!notes && !photos.length && !draftMessageIds.length) { toast('Add job notes or a receipt photo first'); return; }
     const t = await validToken(); if (!t) { toast('Sign in first'); renderAuth(); return; }
     const btn = $('#aiDraftBtn'); btn.disabled = true; $('#aiStatus').textContent = 'QuickTurn AI is drafting…';
     try {
       const r = await fetch(CFG.supabaseUrl.replace(/\/$/, '') + '/functions/v1/draft-invoice', {
         method: 'POST', headers: { Authorization: 'Bearer ' + t, apikey: CFG.supabaseAnonKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes, images: photos.map(({ media_type, data }) => ({ media_type, data })) }),
+        body: JSON.stringify({ notes, images: photos.map(({ media_type, data }) => ({ media_type, data })), messageIds: draftMessageIds }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.draft) { $('#aiStatus').textContent = d.error || 'Drafting failed. Try again.'; return; }
@@ -522,9 +532,97 @@ ${notes}
     finally { btn.disabled = false; }
   });
 
+  // ---------- Cloud saving (Supabase tables: mechanics, invoices, inbound_messages) ----------
+  let draftMessageIds = [];
+  const cloudOn = () => AI_ON && !!session;
+  function setCloud(msg) { $('#cloudStatus').textContent = msg ? '· ' + msg : ''; }
+  const normPhone = (p) => { const d = String(p || '').replace(/\D/g, ''); return d.length === 10 ? '+1' + d : d.length === 11 && d[0] === '1' ? '+' + d : (d ? '+' + d : null); };
+  async function rest(path, opts = {}) {
+    const t = await validToken(); if (!t) throw new Error('signed out');
+    const r = await fetch(CFG.supabaseUrl.replace(/\/$/, '') + '/rest/v1/' + path, { ...opts, headers: { apikey: CFG.supabaseAnonKey, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json', ...(opts.headers || {}) } });
+    if (!r.ok) throw new Error('cloud ' + r.status + ' ' + (await r.text()).slice(0, 120));
+    return r.status === 204 ? null : r.json().catch(() => null);
+  }
+  const mechRow = (p) => ({ id: p.id, data: p, sms_phone: normPhone(p.textFrom || p.phone), updated_at: new Date().toISOString() });
+  const invRow = (i) => ({ id: i.id, mechanic_id: i.profileId, number: num(i.number), status: i.status || 'Draft', total: Math.round(num(i.total) * 100) / 100, data: i.job, updated_at: new Date().toISOString() });
+  const upsert = (table, rows) => rest(table, { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(rows) });
+  async function guard(label, fn) {
+    if (!cloudOn()) return;
+    setCloud('saving…');
+    try { await fn(); setCloud('saved to cloud'); } catch (e) { console.error(label, e); setCloud('cloud save failed: will retry'); pendingRetry = true; }
+  }
+  let pendingRetry = false;
+  const mechTimers = {};
+  function cloudQueueMechanic(p) { if (!cloudOn() || !p) return; clearTimeout(mechTimers[p.id]); mechTimers[p.id] = setTimeout(() => guard('mechanic', () => upsert('mechanics', [mechRow(p)])), 700); }
+  function cloudUpsertInvoice(inv) { guard('invoice', async () => { const p = state.profiles.find(x => x.id === inv.profileId); if (p) await upsert('mechanics', [mechRow(p)]); await upsert('invoices', [invRow(inv)]); }); }
+  function cloudDelete(table, id) { guard('delete', () => rest(`${table}?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' })); }
+  function cloudPushAll() { guard('push', async () => { if (state.profiles.length) await upsert('mechanics', state.profiles.map(mechRow)); if (state.invoices.length) await upsert('invoices', state.invoices.map(invRow)); }); }
+  function linkMessages(invoiceId) {
+    if (!draftMessageIds.length) return;
+    const ids = draftMessageIds.slice(); draftMessageIds = [];
+    guard('link', () => rest(`inbound_messages?id=in.(${ids.join(',')})`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status: 'used', invoice_id: invoiceId }) })).then(loadInbox);
+  }
+  async function cloudPull() {
+    if (!cloudOn()) return;
+    setCloud('syncing…');
+    try {
+      const [mechs, invs] = await Promise.all([rest('mechanics?select=id,data'), rest('invoices?select=id,mechanic_id,number,status,total,data,created_at&order=number.desc')]);
+      const realLocal = state.invoices.length || state.profiles.some(p => p.businessName && p.businessName !== 'New mechanic');
+      if (!mechs.length && realLocal) { await upsert('mechanics', state.profiles.map(mechRow)); if (state.invoices.length) await upsert('invoices', state.invoices.map(invRow)); setCloud('uploaded this browser\'s data to the cloud'); }
+      else if (mechs.length) {
+        const cloudIds = new Set(mechs.map(m => m.id)), cloudInv = new Set(invs.map(i => i.id));
+        const localOnlyP = state.profiles.filter(p => !cloudIds.has(p.id) && (p.businessName !== 'New mechanic' || state.invoices.some(i => i.profileId === p.id)));
+        const localOnlyI = state.invoices.filter(i => !cloudInv.has(i.id) && (cloudIds.has(i.profileId) || localOnlyP.some(p => p.id === i.profileId)));
+        if (localOnlyP.length) await upsert('mechanics', localOnlyP.map(mechRow));
+        if (localOnlyI.length) await upsert('invoices', localOnlyI.map(invRow));
+        state.profiles = mechs.map(m => ({ ...blankProfile(), ...m.data, id: m.id })).concat(localOnlyP);
+        state.invoices = invs.map(i => ({ id: i.id, profileId: i.mechanic_id, number: i.number, status: i.status, total: num(i.total), job: i.data, savedAt: i.created_at })).concat(localOnlyI);
+        if (!state.profiles.some(p => p.id === state.currentId)) state.currentId = state.profiles[0].id;
+        if (state.editingId && !state.invoices.some(i => i.id === state.editingId)) state.editingId = null;
+        persist(); renderAll(); setCloud('synced');
+      } else setCloud('synced');
+      $('#saveNote').textContent = 'Saved to the cloud · shared with your team';
+      pendingRetry = false;
+      loadInbox();
+    } catch (e) { console.error(e); setCloud('offline: saving in this browser'); }
+  }
+
+  // ---------- Inbox ----------
+  let inbox = [];
+  async function loadInbox() {
+    if (!cloudOn()) return;
+    try { inbox = await rest('inbound_messages?select=id,received_at,from_phone,mechanic_id,body,media,status&status=eq.new&order=received_at.desc&limit=100'); } catch (e) { return; }
+    const card = $('#inboxCard'); card.hidden = false;
+    if (!inbox.length) { $('#inboxList').innerHTML = '<p class="hint" style="margin:0">No new texts. When mechanics text the QuickTurn number, they show up here.</p>'; return; }
+    const name = (id, phone) => { const p = state.profiles.find(x => x.id === id); return p ? p.businessName : 'Unknown number ' + phone; };
+    const groups = {};
+    inbox.forEach(m => { const k = m.mechanic_id || m.from_phone; (groups[k] = groups[k] || []).push(m); });
+    $('#inboxList').innerHTML = Object.entries(groups).map(([k, msgs]) => `<div style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:8px">
+      <div style="font-weight:700;margin-bottom:4px">${esc(name(msgs[0].mechanic_id, msgs[0].from_phone))}</div>
+      ${msgs.slice().reverse().map(m => `<label class="chk" style="font-weight:400;align-items:flex-start;margin:4px 0"><input type="checkbox" data-msg="${m.id}" data-mech="${esc(m.mechanic_id || '')}" style="margin-top:3px"><span><span class="hint" style="margin:0">${new Date(m.received_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span><br>${esc(m.body) || '<i class="muted">(no text)</i>'}${(m.media || []).length ? ` <span class="pill">${m.media.length} attachment${m.media.length > 1 ? 's' : ''}</span>` : ''}</span></label>`).join('')}
+    </div>`).join('');
+  }
+  const checkedMsgs = () => $$('#inboxList input[data-msg]:checked');
+  $('#inboxRefreshBtn').addEventListener('click', () => { loadInbox(); toast('Inbox refreshed'); });
+  $('#inboxIgnoreBtn').addEventListener('click', () => {
+    const ids = checkedMsgs().map(x => x.dataset.msg); if (!ids.length) { toast('Check some texts first'); return; }
+    guard('ignore', () => rest(`inbound_messages?id=in.(${ids.join(',')})`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status: 'ignored' }) })).then(loadInbox);
+  });
+  $('#inboxDraftBtn').addEventListener('click', () => {
+    const boxes = checkedMsgs(); if (!boxes.length) { toast('Check the texts for one job first'); return; }
+    const mech = boxes.map(b => b.dataset.mech).find(Boolean);
+    if (mech && state.profiles.some(p => p.id === mech) && mech !== state.currentId) { state.currentId = mech; state.editingId = null; state.draft = blankJob(); persist(); renderAll(); }
+    else if (!mech) toast('Unknown number: pick the right mechanic at the top first');
+    draftMessageIds = boxes.map(b => +b.dataset.msg);
+    $('#aiDraftBtn').click();
+  });
+  $('#newBtn').addEventListener('click', () => { draftMessageIds = []; });
+  setInterval(() => { if (cloudOn() && !document.hidden) { loadInbox(); if (pendingRetry) cloudPushAll(); } }, 60000);
+
   renderAll();
   renderAuth();
   if (AI_ON && session && !session.email) loadEmail();
+  if (cloudOn()) cloudPull();
 })();
 </script>
 </body>

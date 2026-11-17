@@ -86,8 +86,37 @@ Deno.serve(async (req) => {
 
     // 2) Read and check the request.
     const body = await req.json().catch(() => ({}));
-    const notes = String(body?.notes ?? "").slice(0, 20000);
+    let notes = String(body?.notes ?? "").slice(0, 20000);
     const images = Array.isArray(body?.images) ? body.images.slice(0, MAX_IMAGES) : [];
+
+    // 2b) Optional: draft straight from texts in the Inbox (photos are fetched from Twilio here).
+    const ids = Array.isArray(body?.messageIds) ? body.messageIds.slice(0, 30).map(Number).filter(Boolean) : [];
+    if (ids.length) {
+      const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+      const r = await fetch(`${supaUrl}/rest/v1/inbound_messages?select=id,body,media,received_at&id=in.(${ids.join(",")})&order=received_at.asc`, {
+        headers: { apikey: service, Authorization: `Bearer ${service}` },
+      });
+      const rows = r.ok ? await r.json() : [];
+      const sid = Deno.env.get("TWILIO_ACCOUNT_SID") ?? "", tok = Deno.env.get("TWILIO_AUTH_TOKEN") ?? "";
+      const texts: string[] = [];
+      for (const row of rows) {
+        if (row.body) texts.push(row.body);
+        for (const m of (row.media ?? [])) {
+          const type = String(m.content_type ?? "");
+          if (!type.startsWith("image/")) { texts.push(`[A ${type || "file"} was attached that can't be read automatically, e.g. a voice memo. Ask the mechanic to use talk-to-text instead.]`); continue; }
+          if (images.length >= MAX_IMAGES) continue;
+          try {
+            const res = await fetch(m.url, { headers: sid && tok ? { Authorization: "Basic " + btoa(`${sid}:${tok}`) } : {} });
+            if (!res.ok) continue;
+            const bytes = new Uint8Array(await res.arrayBuffer());
+            if (bytes.length > 3_700_000) { texts.push("[A photo was too large to read; ask for a smaller photo.]"); continue; }
+            let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+            images.push({ media_type: OK_TYPES.includes(type) ? type : "image/jpeg", data: btoa(bin) });
+          } catch (_) { /* skip unreadable media */ }
+        }
+      }
+      notes = [texts.join("\n"), notes].filter(Boolean).join("\n").slice(0, 20000);
+    }
     if (!notes.trim() && images.length === 0) return json({ error: "Add job notes or a receipt photo." }, 400);
 
     const content: unknown[] = [];
