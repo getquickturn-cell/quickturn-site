@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
     content.push({ type: "text", text: `Job notes:\n"""\n${notes || "(no notes, use the receipt photos)"}\n"""` });
 
     // 3) Ask Claude, forcing the structured answer.
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+    const apiKey = Deno.env.get("ANTHROPIC_API_KEY") || Deno.env.get("Anthropic API Key");
     if (!apiKey) return json({ error: "The AI key isn't set up yet (ANTHROPIC_API_KEY)." }, 500);
     const ai = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
