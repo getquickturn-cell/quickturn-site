@@ -73,6 +73,7 @@ Rules:
 - Convert minutes to hours (40 min = 0.67).
 - If something is missing or unclear, leave it empty or 0 and add a short question to "questions".
 - Write "work" in plain, professional language a fleet manager would accept.
+- Always answer by calling the invoice_draft tool exactly once. Do not reply with plain text.
 - Voice memo transcripts and talk-to-text may mishear words. Fix obvious diesel-repair mishearings from context; if a number, part or customer name is doubtful, ask in "questions" instead of guessing.`;
 
 const MAX_IMAGES = 6;
@@ -184,7 +185,7 @@ Deno.serve(async (req) => {
         max_tokens: 2000,
         system: SYSTEM,
         tools: [{ name: "invoice_draft", description: "Return the invoice data for this job.", input_schema: SCHEMA }],
-        tool_choice: { type: "tool", name: "invoice_draft" },
+        tool_choice: { type: "auto" },
         messages: [{ role: "user", content }],
       }),
     });
@@ -195,8 +196,15 @@ Deno.serve(async (req) => {
     }
     const out = await ai.json();
     const tool = (out?.content ?? []).find((b: { type: string }) => b.type === "tool_use");
-    if (!tool?.input) return json({ error: "QuickTurn AI didn't return a draft. Try again." }, 502);
-    return json({ draft: tool.input, usage: out?.usage ?? null });
+    let draft = tool?.input ?? null;
+    if (!draft) {
+      // Fallback: pull a JSON object out of a plain-text answer.
+      const text = (out?.content ?? []).filter((b: { type: string }) => b.type === "text").map((b: { text: string }) => b.text).join("\n");
+      const m = text.match(/\{[\s\S]*\}/);
+      try { draft = m ? JSON.parse(m[0]) : null; } catch (_) { draft = null; }
+    }
+    if (!draft) return json({ error: "QuickTurn AI didn't return a draft. Try again." }, 502);
+    return json({ draft, usage: out?.usage ?? null });
   } catch (e) {
     console.error(e);
     return json({ error: "Something went wrong drafting this invoice." }, 500);
