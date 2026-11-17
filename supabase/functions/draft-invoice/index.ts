@@ -9,6 +9,16 @@
 //   TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN   to download texted photos and voice memos
 // SUPABASE_URL and SUPABASE_ANON_KEY are provided by Supabase automatically.
 
+// Find a secret even if it was saved with spaces, different capitals, or a small typo.
+function secret(...names: string[]): string {
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const env = Deno.env.toObject();
+  for (const n of names) if (env[n]) return env[n];
+  const wanted = names.map(norm);
+  for (const [k, v] of Object.entries(env)) if (v && wanted.includes(norm(k))) return v;
+  return "";
+}
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -74,7 +84,7 @@ const KEYTERMS = ["DPF", "DEF", "EGR", "SCR", "turbo", "injector", "actuator", "
   "air brake", "slack adjuster", "kingpin", "Cummins", "Detroit", "Paccar", "Freightliner", "Peterbilt", "Kenworth", "reefer"];
 
 async function transcribe(url: string, type: string, auth: Record<string, string>): Promise<string> {
-  const key = Deno.env.get("DEEPGRAM_API_KEY");
+  const key = secret("DEEPGRAM_API_KEY", "deepgram api key");
   if (!key) return "";
   try {
     const audio = await fetch(url, { headers: auth });
@@ -125,7 +135,7 @@ Deno.serve(async (req) => {
         headers: { apikey: service, Authorization: `Bearer ${service}` },
       });
       const rows = r.ok ? await r.json() : [];
-      const sid = Deno.env.get("TWILIO_ACCOUNT_SID") ?? "", tok = Deno.env.get("TWILIO_AUTH_TOKEN") ?? "";
+      const sid = secret("TWILIO_ACCOUNT_SID", "Twilio account SID"), tok = secret("TWILIO_AUTH_TOKEN", "Twilio auth token", "Wtilio auth token");
       const texts: string[] = [];
       for (const row of rows) {
         if (row.body) texts.push(row.body);
@@ -164,7 +174,7 @@ Deno.serve(async (req) => {
     content.push({ type: "text", text: `Job notes:\n"""\n${notes || "(no notes, use the receipt photos)"}\n"""` });
 
     // 3) Ask Claude, forcing the structured answer.
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY") || Deno.env.get("Anthropic API Key");
+    const apiKey = secret("ANTHROPIC_API_KEY", "Anthropic API Key");
     if (!apiKey) return json({ error: "The AI key isn't set up yet (ANTHROPIC_API_KEY)." }, 500);
     const ai = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",

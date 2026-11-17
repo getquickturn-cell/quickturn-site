@@ -9,6 +9,16 @@
 //   TWILIO_AUTH_TOKEN   from the Twilio console (used to verify requests really come from Twilio)
 // Provided automatically: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 
+// Find a secret even if it was saved with spaces, different capitals, or a small typo.
+function secret(...names: string[]): string {
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const env = Deno.env.toObject();
+  for (const n of names) if (env[n]) return env[n];
+  const wanted = names.map(norm);
+  for (const [k, v] of Object.entries(env)) if (v && wanted.includes(norm(k))) return v;
+  return "";
+}
+
 const twiml = (msg?: string) =>
   new Response(
     `<?xml version="1.0" encoding="UTF-8"?><Response>${msg ? `<Message>${msg.replace(/[<&>]/g, "")}</Message>` : ""}</Response>`,
@@ -40,7 +50,7 @@ Deno.serve(async (req) => {
   try {
     const supaUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const token = Deno.env.get("TWILIO_AUTH_TOKEN") ?? "";
+    const token = secret("TWILIO_AUTH_TOKEN", "Twilio auth token", "Wtilio auth token");
     const raw = await req.text();
     const params = new URLSearchParams(raw);
 
