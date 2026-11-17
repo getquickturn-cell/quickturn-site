@@ -5,6 +5,8 @@
 //   ANTHROPIC_API_KEY   your Anthropic API key (never put this in the website code)
 //   ALLOWED_EMAILS      comma-separated emails allowed to use it, e.g. getquickturn@gmail.com,danny@example.com
 //   ANTHROPIC_MODEL     optional; defaults to claude-sonnet-5-5
+//   DEEPGRAM_API_KEY    turns texted voice memos into text
+//   TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN   to download texted photos and voice memos
 // SUPABASE_URL and SUPABASE_ANON_KEY are provided by Supabase automatically.
 
 const CORS = {
@@ -60,11 +62,37 @@ Rules:
 - Parts "cost" is what the mechanic paid per item on the receipt (before any markup). Ignore receipt tax lines and totals; list each part.
 - Convert minutes to hours (40 min = 0.67).
 - If something is missing or unclear, leave it empty or 0 and add a short question to "questions".
-- Write "work" in plain, professional language a fleet manager would accept.`;
+- Write "work" in plain, professional language a fleet manager would accept.
+- Voice memo transcripts and talk-to-text may mishear words. Fix obvious diesel-repair mishearings from context; if a number, part or customer name is doubtful, ask in "questions" instead of guessing.`;
 
 const MAX_IMAGES = 6;
 const MAX_IMAGE_B64 = 3_000_000; // ~2.2 MB per image after the app shrinks it
 const OK_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+// Diesel words the transcriber should expect (helps it spell shop terms right).
+const KEYTERMS = ["DPF", "DEF", "EGR", "SCR", "turbo", "injector", "actuator", "aftertreatment", "regen",
+  "air brake", "slack adjuster", "kingpin", "Cummins", "Detroit", "Paccar", "Freightliner", "Peterbilt", "Kenworth", "reefer"];
+
+async function transcribe(url: string, type: string, auth: Record<string, string>): Promise<string> {
+  const key = Deno.env.get("DEEPGRAM_API_KEY");
+  if (!key) return "";
+  try {
+    const audio = await fetch(url, { headers: auth });
+    if (!audio.ok) return "";
+    const bytes = new Uint8Array(await audio.arrayBuffer());
+    if (bytes.length > 20_000_000) return "";
+    const q = new URLSearchParams({ model: "nova-3", smart_format: "true", punctuate: "true" });
+    for (const k of KEYTERMS) q.append("keyterm", k);
+    const r = await fetch(`https://api.deepgram.com/v1/listen?${q}`, {
+      method: "POST",
+      headers: { Authorization: `Token ${key}`, "Content-Type": type || "application/octet-stream" },
+      body: bytes,
+    });
+    if (!r.ok) { console.error("Deepgram error", r.status, (await r.text()).slice(0, 300)); return ""; }
+    const out = await r.json();
+    return String(out?.results?.channels?.[0]?.alternatives?.[0]?.transcript ?? "").trim();
+  } catch (e) { console.error("Transcribe failed", e); return ""; }
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -103,10 +131,17 @@ Deno.serve(async (req) => {
         if (row.body) texts.push(row.body);
         for (const m of (row.media ?? [])) {
           const type = String(m.content_type ?? "");
-          if (!type.startsWith("image/")) { texts.push(`[A ${type || "file"} was attached that can't be read automatically, e.g. a voice memo. Ask the mechanic to use talk-to-text instead.]`); continue; }
+          const twAuth: Record<string, string> = sid && tok ? { Authorization: "Basic " + btoa(`${sid}:${tok}`) } : {};
+          if (type.startsWith("audio/") || type === "video/3gpp" || type === "video/mp4") {
+            // Voice memo: transcribe with Deepgram, then treat it as notes.
+            const said = await transcribe(m.url, type, twAuth);
+            texts.push(said ? `[Voice memo transcript]: ${said}` : "[A voice memo couldn't be transcribed. Ask the mechanic to resend it or type the key details.]");
+            continue;
+          }
+          if (!type.startsWith("image/")) { texts.push(`[A ${type || "file"} was attached that can't be read automatically.]`); continue; }
           if (images.length >= MAX_IMAGES) continue;
           try {
-            const res = await fetch(m.url, { headers: sid && tok ? { Authorization: "Basic " + btoa(`${sid}:${tok}`) } : {} });
+            const res = await fetch(m.url, { headers: twAuth });
             if (!res.ok) continue;
             const bytes = new Uint8Array(await res.arrayBuffer());
             if (bytes.length > 3_700_000) { texts.push("[A photo was too large to read; ask for a smaller photo.]"); continue; }
