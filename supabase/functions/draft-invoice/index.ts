@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
       headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
       body: JSON.stringify({
         model: Deno.env.get("ANTHROPIC_MODEL") || "claude-sonnet-5-5",
-        max_tokens: 2000,
+        max_tokens: 8000,
         system: SYSTEM,
         tools: [{ name: "invoice_draft", description: "Return the invoice data for this job.", input_schema: SCHEMA }],
         tool_choice: { type: "auto" },
