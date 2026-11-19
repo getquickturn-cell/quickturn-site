@@ -1,26 +1,65 @@
 name: Deploy site
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
 permissions:
   contents: read
   pages: write
   id-token: write
+
 concurrency:
   group: deploy-site
   cancel-in-progress: true
+
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm install` rather than `npm ci` because no lockfile is committed
+      # yet. Once package-lock.json is in the repo, switch this to `npm ci`
+      # for reproducible builds.
+      - name: Install dependencies
+        run: npm install
+
+      # Prerenders every route to static HTML in .output/public, alongside
+      # everything copied verbatim from public/ — including CNAME, which the
+      # custom domain depends on, and the legacy app at /app/.
+      - name: Build static site
+        run: npm run generate
+
+      # Fail loudly here rather than discovering a dropped custom domain
+      # after getquickturn.com has already gone down.
+      - name: Verify build output
+        run: |
+          set -e
+          test -f .output/public/CNAME || { echo "::error::CNAME missing from build output — the custom domain would break"; exit 1; }
+          test -f .output/public/index.html || { echo "::error::index.html missing from build output"; exit 1; }
+          test -f .output/public/app/index.html || { echo "::error::legacy app missing from /app/"; exit 1; }
+          echo "Build output verified:"
+          ls -la .output/public
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .output/public
+
   deploy:
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
       - id: deployment
         uses: actions/deploy-pages@v4

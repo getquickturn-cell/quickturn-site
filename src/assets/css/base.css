@@ -1,0 +1,158 @@
+/**
+ * Base styles: document, typography defaults, and the handful of helpers
+ * used across more than one component.
+ *
+ * Anything specific to one section lives in that component's <style scoped>
+ * block instead. The original page had `body { position: relative }` and the
+ * `html` rules declared twice in different places; they are consolidated here.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* The hero's decorative glow extends past the viewport. */
+  overflow-x: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  position: relative;
+  margin: 0;
+  background: var(--paper);
+  color: var(--charcoal);
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Warm glow behind the top-right of the page. */
+body::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  width: 640px;
+  height: 640px;
+  right: -260px;
+  top: -200px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(181, 96, 63, 0.3) 0%,
+    rgba(208, 138, 108, 0.16) 40%,
+    transparent 68%
+  );
+}
+
+a {
+  color: var(--brown);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--amber);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Shared helpers                                                          */
+/* ---------------------------------------------------------------------- */
+
+/** The standard reading column. */
+.wrap {
+  max-width: var(--col);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/** A full-bleed section in the scroll story. */
+.screen {
+  padding: 60px 0;
+}
+
+.screen > .wrap {
+  width: 100%;
+  padding: 0 16px;
+}
+
+/** Section heading inside a panel. */
+.caption {
+  font-size: 22px;
+  font-weight: 700;
+  font-stretch: 108%;
+  line-height: 1.25;
+  text-align: center;
+  margin: 0 0 26px;
+  color: var(--charcoal);
+}
+
+/** The brown half of a two-tone headline. */
+.soft {
+  color: var(--brown);
+}
+
+.btn {
+  display: inline-block;
+  text-decoration: none;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 18px;
+  background: var(--brown);
+  color: #fff;
+  padding: 15px 26px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--brown);
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: var(--brown-deep);
+  border-color: var(--brown-deep);
+}
+
+.btn[disabled] {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.btn--small {
+  padding: 9px 16px;
+  font-size: 15px;
+}
+
+/** Visible only to screen readers. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  body {
+    font-size: 17px;
+  }
+
+  .caption {
+    font-size: 20px;
+  }
+}

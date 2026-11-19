@@ -1,0 +1,24 @@
+{
+  "name": "quickturn-site",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Marketing site for getquickturn.com",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck"
+  },
+  "devDependencies": {
+    "nuxt": "^4.6.4",
+    "typescript": "^5.7.2",
+    "vue": "^3.5.13",
+    "vue-tsc": "^2.2.0"
+  }
+}

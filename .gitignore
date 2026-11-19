@@ -1,2 +1,22 @@
+# Private project context — this repo is public
 CLAUDE.md
+
+# Dependencies
+node_modules/
+
+# Nuxt build output
+.nuxt/
+.output/
+dist/
+.data/
+*.tsbuildinfo
+
+# Secrets
 .env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/

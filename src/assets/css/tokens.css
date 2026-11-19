@@ -1,0 +1,59 @@
+/**
+ * Design tokens.
+ *
+ * These are QuickTurn's brand values, carried over unchanged from the
+ * original single-file page. The same palette is used by the app in
+ * quickturn-app, so if a value changes here it needs changing there too.
+ *
+ * Nothing in this file selects an element. Tokens only.
+ */
+
+:root {
+  /* Surfaces */
+  --paper: #f6f5f2;
+  --cream: #e4e1da;
+  --panel-paper: #e4e1da;
+  --panel-dark: #1a1d21;
+  --panel-glow-base: #efe9e4;
+  --scrap: #f8f6f1;
+
+  /* Brand */
+  --brown: #b5603f;
+  --brown-deep: #8e4a31;
+  --amber: #d08a6c;
+
+  /* Ink */
+  --charcoal: #22262b;
+  --oil: #3a3f46;
+  --muted: #6b7079;
+  --ink-inverse: #d5d8dc;
+  --ink-on-dark-dim: #b8bec6;
+
+  /* Lines */
+  --line: #d3d0c9;
+  --line-soft: #eceae5;
+  --line-dark: #41474f;
+
+  /* Semantic */
+  --error: #a12c2c;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-panel: 28px;
+  --radius-card: 20px;
+  --radius-pill: 99px;
+
+  /* Layout */
+  --col: 560px;
+  --col-wide: 1120px;
+  --col-demo: 920px;
+
+  /* Type */
+  --font-body: "Archivo", system-ui, sans-serif;
+  --font-hand: "Gochi Hand", cursive;
+
+  /* Motion */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
