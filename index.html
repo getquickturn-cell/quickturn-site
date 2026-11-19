@@ -152,12 +152,95 @@
   .invoice tr.total td { border-bottom: 0; font-weight: 800; font-size: 18px; padding-top: 10px; }
   .invoice .status { display: inline-block; margin-top: 10px; font-size: 13px; font-weight: 700; color: var(--brown-deep); background: var(--cream); padding: 3px 10px; border-radius: 99px; }
 
-  /* 4b. Demo video */
-  #demo .wrap { max-width: 920px; }
-  .demo { margin: 0; }
-  .demo video { display: block; width: 100%; height: auto; border-radius: 14px; background: #16233F; box-shadow: 0 24px 40px -24px rgba(0,0,0,.8); }
-  .demo figcaption { margin-top: 12px; font-size: 14px; color: #B8BEC6; text-align: center; }
-  @media (max-width: 640px) { .demo { max-width: 340px; margin: 0 auto; } }
+  /* 4c. Try it yourself: a scripted, clickable demo of the invoice builder */
+  /* The demo gets its own bubble: a rounded slate card with a soft rust glow, so the white invoice pops */
+  #try { padding-top: 16px; padding-bottom: 16px; }
+  #try .panel {
+    position: relative; color: var(--paper); border-radius: 32px; padding: 46px 22px 40px; overflow: hidden;
+    background:
+      radial-gradient(70% 45% at 50% 64%, rgba(181,96,63,.40), transparent 72%),
+      radial-gradient(50% 30% at 92% 4%, rgba(208,138,108,.20), transparent 70%),
+      #1A1D21;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.05) inset, 0 40px 70px -40px rgba(26,29,33,.75);
+  }
+  #try .panel::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .45;
+    background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px); background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(80% 70% at 50% 45%, #000, transparent);
+            mask-image: radial-gradient(80% 70% at 50% 45%, #000, transparent);
+  }
+  #try .panel > * { position: relative; }
+  #try .caption { color: #fff; font-size: clamp(26px, 6vw, 34px); font-stretch: 112%; font-weight: 800; letter-spacing: -0.015em; margin-bottom: 22px; }
+  #try .qd-sub { color: #B8BEC6; }
+  #try .qd-job { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.18); color: #E7E9EC; }
+  #try .qd-job:hover { border-color: var(--amber); }
+  #try .qd-job[aria-checked="true"] { background: var(--paper); border-color: var(--paper); color: var(--charcoal); }
+  #try .qd-msg { background: #2B3036; border: 1px solid #41474F; box-shadow: 0 24px 40px -24px rgba(0,0,0,.8); }
+  #try .qd-go { box-shadow: 0 14px 30px -12px rgba(181,96,63,.75); }
+  #try .qd-go:hover { background: #C66E4B; border-color: #C66E4B; }
+  #try .qd-thinking { color: #B8BEC6; }
+  #try .qd-inv { border: 0; box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 40px 70px -30px rgba(0,0,0,.85), 0 0 90px -20px rgba(208,138,108,.45); color: var(--charcoal); }
+  #try .qd-sent .pill { background: rgba(208,138,108,.18); color: #F2C8B5; }
+  #try .qd-sent h3 { color: #fff; }
+  #try .qd-sent .soft { color: var(--amber); }
+  #try .qd-sent p { color: #C9CDD2; }
+  #try #qd-again { background: transparent; border-color: rgba(255,255,255,.25); color: #E7E9EC; }
+  #try .qd-fine { color: #8E949C; }
+  .qd-sub { text-align: center; color: var(--muted); font-size: 15px; margin: -14px 0 20px; }
+  .qd-jobs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 0 0 18px; }
+  .qd-job {
+    font: inherit; font-size: 15px; font-weight: 650; cursor: pointer; min-height: 44px; padding: 0 16px;
+    border: 1.5px solid var(--line); border-radius: 99px; background: var(--paper); color: var(--charcoal);
+  }
+  .qd-job[aria-checked="true"] { background: var(--charcoal); border-color: var(--charcoal); color: var(--paper); }
+  .qd-msg { max-width: 420px; margin: 0 auto; background: var(--charcoal); color: var(--paper); border-radius: 18px 18px 18px 6px; padding: 14px 16px 16px; font-size: 16.5px; line-height: 1.5; }
+  .qd-msg .who { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #B8BEC6; margin-bottom: 6px; }
+  .qd-msg mark { background: transparent; color: inherit; border-radius: 4px; padding: 0 2px; margin: 0 -2px; transition: background .35s, color .35s; }
+  .qd-msg mark.hit { background: rgba(208,138,108,.35); color: #fff; }
+  .qd-go { display: block; width: 100%; max-width: 420px; margin: 16px auto 0; border: 0; cursor: pointer; font-family: inherit; text-align: center; }
+  .qd-go[disabled] { opacity: .75; cursor: default; }
+  .qd-thinking { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--muted); font-size: 15px; margin-top: 14px; }
+  .qd-inv {
+    max-width: 420px; margin: 18px auto 0; background: #fff; border: 2px solid var(--charcoal); border-radius: 12px;
+    padding: 18px 18px 16px; font-size: 15.5px; box-shadow: 0 24px 44px -26px rgba(34,38,43,.45);
+  }
+  .qd-inv .hd { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid var(--charcoal); padding-bottom: 8px; margin-bottom: 10px; }
+  .qd-inv .hd b { font-stretch: 115%; font-size: 17px; }
+  .qd-inv .hd span { font-size: 13px; color: var(--muted); }
+  .qd-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; font-size: 14px; margin-bottom: 10px; }
+  .qd-meta small { display: block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .qd-lines { width: 100%; border-collapse: collapse; }
+  .qd-lines td { padding: 8px 0; border-bottom: 1px solid #ECEAE5; vertical-align: middle; }
+  .qd-lines td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .qd-lines td .d { display: block; font-size: 13px; color: var(--muted); }
+  .qd-lines tr.labor td { background: #F6E3DA; }
+  .qd-lines tr.labor td:first-child { padding-left: 8px; border-left: 3px solid var(--brown); }
+  .qd-lines tr.labor td:last-child { padding-right: 8px; }
+  .qd-lines tr.sum td { border-bottom: 0; color: var(--oil); font-size: 14px; padding: 4px 0; }
+  .qd-lines tr.sum:first-of-type td { padding-top: 10px; }
+  .qd-lines tr.total td { border-top: 2px solid var(--charcoal); border-bottom: 0; font-weight: 800; font-size: 18px; padding-top: 10px; }
+  .qd-step { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; }
+  .qd-step button {
+    width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--brown); background: #fff; color: var(--brown-deep);
+    font: inherit; font-size: 18px; font-weight: 800; line-height: 1; cursor: pointer; display: grid; place-items: center;
+  }
+  .qd-step button:hover { background: var(--brown); color: #fff; }
+  .qd-step output { min-width: 62px; text-align: center; font-weight: 750; font-size: 14px; }
+  .qd-flash { animation: qdflash .6s ease; }
+  @keyframes qdflash { 0% { background: rgba(208,138,108,.45); } 100% { background: transparent; } }
+  .qd-hint { font-size: 13px; color: var(--brown-deep); font-weight: 650; margin: 10px 0 0; }
+  .qd-actions { display: flex; gap: 10px; margin-top: 14px; }
+  .qd-actions .btn { flex: 1; text-align: center; border: 0; cursor: pointer; font-family: inherit; font-size: 16px; padding: 13px 14px; }
+  .qd-ghost { background: #fff !important; color: var(--charcoal) !important; border: 1.5px solid var(--line) !important; }
+  .qd-sent { text-align: center; max-width: 420px; margin: 18px auto 0; }
+  .qd-sent .pill { display: inline-flex; align-items: center; gap: 8px; background: var(--cream); color: var(--brown-deep); font-weight: 750; font-size: 15px; padding: 8px 14px; border-radius: 99px; }
+  .qd-sent h3 { font-size: 24px; font-weight: 800; font-stretch: 108%; margin: 16px 0 6px; line-height: 1.15; }
+  .qd-sent p { margin: 0 0 16px; color: var(--oil); font-size: 16px; }
+  .qd-fine { text-align: center; font-size: 13px; color: var(--muted); margin: 16px 0 0; }
+  @media (prefers-reduced-motion: no-preference) {
+    .qd-in { animation: qdin .45s cubic-bezier(.22,1,.36,1) both; }
+    @keyframes qdin { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  }
 
   /* 5. How it works + close */
   .close h2 { font-stretch: 112%; font-weight: 800; font-size: clamp(32px, 6vw, 44px); line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 28px; }
@@ -300,18 +383,36 @@
     </div></div>
   </section>
 
-  <!-- 4b. Watch it happen -->
-  <section class="screen tile" id="demo">
-    <div class="wrap"><div class="panel panel-dark">
-      <p class="caption reveal">Watch it happen, start to finish.</p>
-      <figure class="demo reveal">
-        <video autoplay muted loop playsinline preload="metadata" poster="media/quickturn-demo-wide.jpg"
-               aria-label="Demo: a mechanic texts the job, a voice note and a receipt photo, and QuickTurn AI turns it into an invoice with a pay link.">
-          <source src="media/quickturn-demo-vertical.mp4" type="video/mp4" media="(max-width: 640px)">
-          <source src="media/quickturn-demo-wide.mp4" type="video/mp4">
-        </video>
-        <figcaption>Early preview of the QuickTurn beta.</figcaption>
-      </figure>
+  <!-- 4c. Try it yourself -->
+  <section class="screen tile" id="try">
+    <div class="wrap"><div class="panel">
+      <p class="caption reveal">Now try it yourself.</p>
+      <p class="qd-sub reveal">Pick a job, then let QuickTurn AI write the invoice.</p>
+      <div class="qd-jobs reveal" role="radiogroup" aria-label="Sample jobs" id="qd-jobs"></div>
+      <div class="qd-msg reveal" id="qd-msg" aria-live="polite">
+        <div class="who"><span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span> <span id="qd-who">Voice note from the service truck</span></div>
+        <div id="qd-text"></div>
+      </div>
+      <button class="btn qd-go reveal" id="qd-go" type="button">Draft with QuickTurn AI</button>
+      <div class="qd-thinking" id="qd-thinking" hidden><span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span> QuickTurn AI is reading the job…</div>
+      <div class="qd-inv" id="qd-inv" hidden aria-live="polite">
+        <div class="hd"><b>Invoice <span id="qd-num"></span></b><span id="qd-date"></span></div>
+        <div class="qd-meta" id="qd-meta"></div>
+        <table class="qd-lines"><tbody id="qd-lines"></tbody></table>
+        <p class="qd-hint" id="qd-hint" hidden>Try it: change the labor hours. Every number is yours to check.</p>
+        <div class="qd-actions" id="qd-actions" hidden>
+          <button class="btn qd-ghost" type="button" id="qd-reset">Try another job</button>
+          <button class="btn" type="button" id="qd-send">Send invoice</button>
+        </div>
+      </div>
+      <div class="qd-sent" id="qd-sent" hidden tabindex="-1">
+        <span class="pill"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg> <span id="qd-sent-line">Invoice sent with a pay link</span></span>
+        <h3>That's the whole job. <span class="soft">Done before you pull out.</span></h3>
+        <p>Want this for your real jobs?</p>
+        <a class="btn js-try" data-loc="demo" href="#signup">Try it free</a>
+        <p><button class="qd-job" type="button" id="qd-again" style="margin-top:14px">Try another job</button></p>
+      </div>
+      <p class="qd-fine">Sample jobs and prices. Nothing you do here is saved or sent.</p>
     </div></div>
   </section>
 
@@ -413,7 +514,7 @@
   document.querySelectorAll('a.js-try').forEach(function (el) {
     el.addEventListener('click', function (ev) {
       ev.preventDefault();
-      if (typeof gtag === 'function') gtag('event', 'try_it_free_click', { location: el.closest('header') ? 'header' : 'hero' });
+      if (typeof gtag === 'function') gtag('event', 'try_it_free_click', { location: el.dataset.loc || (el.closest('header') ? 'header' : 'hero') });
       const closeWrap = document.querySelector('#beta > .wrap');
       if (!closeWrap.classList.contains('in')) { closeWrap.style.transition = 'none'; closeWrap.classList.add('in'); }
       form.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -476,6 +577,168 @@
   } else {
     document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
   }
+</script>
+<script>
+  // "Try it yourself" demo. Everything is scripted: no AI call, nothing saved or sent.
+  (function () {
+    const TAX = 0.0725, RATE = 145, DRIVE_RATE = 95;
+    const JOBS = [
+      {
+        id: 'turbo', label: 'Turbo actuator', num: '#1042', who: 'Voice note from the service truck',
+        text: [['Ridgeline Freight', 'cust'], ', unit 214, ', ['Cascadia', 'unit'], '. Replaced the ', ['turbo actuator', 'p1'], ', ran a forced regen. ', ['Three and a half hours', 'lab'], ' plus the ', ['road call', 'call'], '. ', ['PO 5531', 'po'], '.'],
+        meta: [['Bill to', 'Ridgeline Freight', 'cust'], ['Unit', '#214 · Freightliner Cascadia', 'unit'], ['Customer PO', '5531', 'po'], ['Due', 'On receipt', null]],
+        lines: [
+          { k: 'p1', label: 'Turbo actuator', d: 'Part', amt: 865, tax: true },
+          { k: 'lab', label: 'Labor', d: 'Replace actuator, forced regen', hrs: 3.5, labor: true },
+          { k: 'call', label: 'Road call', d: 'Flat fee', amt: 150 }
+        ]
+      },
+      {
+        id: 'pm', label: '250-hr PM service', num: '#1043', who: 'Voice note from the service truck',
+        text: [['Canyon Ready Mix', 'cust'], ', ', ['truck 12, the Mack Granite', 'unit'], '. Did the 250-hour PM: ', ['oil and filters', 'p1'], ', greased it, checked brakes. ', ['Two hours', 'lab'], ' on site, about ', ['forty-five minutes of drive time', 'drv'], '.'],
+        meta: [['Bill to', 'Canyon Ready Mix', 'cust'], ['Unit', '#12 · Mack Granite', 'unit'], ['Customer PO', 'None given', null], ['Due', 'Net 15', null]],
+        lines: [
+          { k: 'p1', label: 'PM kit: oil and filters', d: 'Parts', amt: 286.40, tax: true },
+          { k: 'lab', label: 'Labor', d: '250-hr PM, grease, brake check', hrs: 2, labor: true },
+          { k: 'drv', label: 'Drive time', d: '0.75 hr at $' + DRIVE_RATE + '/hr', amt: 0.75 * DRIVE_RATE }
+        ]
+      },
+      {
+        id: 'tire', label: 'Roadside tire', num: '#1044', who: 'Text from the side of I-15',
+        text: [['Wasatch Haulers', 'cust'], ', ', ['unit 88', 'unit'], ' on I-15 by Nephi. Swapped a blown steer, ', ['new 295/75', 'p1'], '. ', ['Hour and a half', 'lab'], ', ', ['road call', 'call'], '. ', ['PO 7720', 'po'], '.'],
+        meta: [['Bill to', 'Wasatch Haulers', 'cust'], ['Unit', '#88 · Roadside, I-15', 'unit'], ['Customer PO', '7720', 'po'], ['Due', 'On receipt', null]],
+        lines: [
+          { k: 'p1', label: 'Steer tire 295/75R22.5', d: 'Part', amt: 489, tax: true },
+          { k: 'lab', label: 'Labor', d: 'Dismount, mount, balance', hrs: 1.5, labor: true },
+          { k: 'call', label: 'Road call', d: 'Flat fee', amt: 150 }
+        ]
+      }
+    ];
+
+    const $ = function (id) { return document.getElementById(id); };
+    const jobsEl = $('qd-jobs'), textEl = $('qd-text'), goBtn = $('qd-go'), thinking = $('qd-thinking');
+    const inv = $('qd-inv'), linesEl = $('qd-lines'), metaEl = $('qd-meta'), hint = $('qd-hint'), actions = $('qd-actions'), sent = $('qd-sent');
+    const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const money = function (n) { return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+    const track = function (name, params) { if (typeof gtag === 'function') gtag('event', name, params || {}); };
+    let job = JOBS[0], timers = [], hrs = 0;
+
+    function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+    function later(fn, ms) { timers.push(setTimeout(fn, calm ? 0 : ms)); }
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    function renderChips() {
+      jobsEl.innerHTML = '';
+      JOBS.forEach(function (j) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'qd-job'; b.setAttribute('role', 'radio');
+        b.setAttribute('aria-checked', String(j === job)); b.textContent = j.label;
+        b.addEventListener('click', function () { if (j !== job) { job = j; reset(); track('demo_pick_job', { job: j.id }); } });
+        jobsEl.appendChild(b);
+      });
+    }
+
+    function renderText() {
+      $('qd-who').textContent = job.who;
+      textEl.innerHTML = '“' + job.text.map(function (s) {
+        return typeof s === 'string' ? esc(s) : '<mark data-k="' + s[1] + '">' + esc(s[0]) + '</mark>';
+      }).join('') + '”';
+    }
+    function hit(k) { if (!k) return; textEl.querySelectorAll('mark[data-k="' + k + '"]').forEach(function (m) { m.classList.add('hit'); }); }
+
+    function reset() {
+      clearTimers();
+      renderChips(); renderText();
+      inv.hidden = true; thinking.hidden = true; sent.hidden = true; hint.hidden = true; actions.hidden = true;
+      goBtn.hidden = false; goBtn.disabled = false; goBtn.textContent = 'Draft with QuickTurn AI';
+    }
+
+    function totals() {
+      let parts = 0, sub = 0;
+      job.lines.forEach(function (l) {
+        const amt = l.labor ? hrs * RATE : l.amt;
+        sub += amt; if (l.tax) parts += amt;
+      });
+      const tax = Math.round(parts * TAX * 100) / 100;
+      return { sub: sub, tax: tax, total: sub + tax };
+    }
+
+    function paintTotals(flash) {
+      const t = totals();
+      $('qd-sub').textContent = money(t.sub); $('qd-tax').textContent = money(t.tax); $('qd-total').textContent = money(t.total);
+      if (flash) { const row = $('qd-total').parentNode; row.classList.remove('qd-flash'); void row.offsetWidth; row.classList.add('qd-flash'); }
+    }
+
+    function draft() {
+      clearTimers();
+      hrs = job.lines.filter(function (l) { return l.labor; })[0].hrs;
+      goBtn.disabled = true; goBtn.textContent = 'Drafting…'; thinking.hidden = false;
+      textEl.querySelectorAll('mark').forEach(function (m) { m.classList.remove('hit'); });
+      track('demo_draft', { job: job.id });
+
+      later(function () {
+        thinking.hidden = true; goBtn.hidden = true;
+        $('qd-num').textContent = job.num;
+        $('qd-date').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        metaEl.innerHTML = ''; linesEl.innerHTML = '';
+        inv.hidden = false;
+        let t = 0;
+        job.meta.forEach(function (m) {
+          later(function () {
+            const d = document.createElement('div'); d.className = 'qd-in';
+            d.innerHTML = '<small>' + esc(m[0]) + '</small>' + esc(m[1]);
+            metaEl.appendChild(d); hit(m[2]);
+          }, t += 220);
+        });
+        job.lines.forEach(function (l) {
+          later(function () {
+            const tr = document.createElement('tr'); tr.className = 'qd-in' + (l.labor ? ' labor' : '');
+            if (l.labor) {
+              tr.innerHTML = '<td>' + esc(l.label) + '<span class="d">' + esc(l.d) + '</span>' +
+                '<span class="qd-step"><button type="button" aria-label="Fewer labor hours" data-s="-0.25">−</button>' +
+                '<output id="qd-hrs" aria-live="polite"></output>' +
+                '<button type="button" aria-label="More labor hours" data-s="0.25">+</button></span></td><td id="qd-lab"></td>';
+            } else {
+              tr.innerHTML = '<td>' + esc(l.label) + '<span class="d">' + esc(l.d) + '</span></td><td>' + money(l.amt) + '</td>';
+            }
+            linesEl.appendChild(tr); hit(l.k);
+            if (l.labor) { paintLabor(); tr.querySelectorAll('button').forEach(function (b) { b.addEventListener('click', function () { step(parseFloat(b.dataset.s)); }); }); }
+          }, t += 320);
+        });
+        later(function () {
+          [['Subtotal', 'qd-sub', 'sum'], ['Sales tax on parts (7.25%)', 'qd-tax', 'sum'], ['Total', 'qd-total', 'total']].forEach(function (r) {
+            const tr = document.createElement('tr'); tr.className = 'qd-in ' + r[2];
+            tr.innerHTML = '<td>' + r[0] + '</td><td id="' + r[1] + '"></td>';
+            linesEl.appendChild(tr);
+          });
+          paintTotals(false);
+          hint.hidden = false; actions.hidden = false;
+        }, t += 360);
+      }, 1100);
+    }
+
+    function paintLabor() {
+      $('qd-hrs').textContent = hrs + (hrs === 1 ? ' hr' : ' hrs');
+      $('qd-lab').textContent = money(hrs * RATE);
+    }
+    function step(d) {
+      hrs = Math.min(12, Math.max(0.25, Math.round((hrs + d) * 100) / 100));
+      paintLabor(); paintTotals(true); hint.hidden = true;
+      track('demo_edit', { job: job.id });
+    }
+
+    goBtn.addEventListener('click', draft);
+    $('qd-reset').addEventListener('click', function () { const i = JOBS.indexOf(job); job = JOBS[(i + 1) % JOBS.length]; reset(); });
+    $('qd-again').addEventListener('click', function () { const i = JOBS.indexOf(job); job = JOBS[(i + 1) % JOBS.length]; reset(); jobsEl.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'center' }); });
+    $('qd-send').addEventListener('click', function () {
+      const name = job.meta[0][1];
+      $('qd-sent-line').textContent = 'Texted to ' + name + ' with a pay link · ' + $('qd-total').textContent;
+      inv.hidden = true; sent.hidden = false; sent.focus({ preventScroll: true });
+      sent.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'center' });
+      track('demo_send', { job: job.id });
+    });
+    reset();
+  })();
 </script>
 </body>
 </html>
