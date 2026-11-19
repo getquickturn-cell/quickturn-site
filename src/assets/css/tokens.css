@@ -15,7 +15,8 @@
   --panel-paper: #e4e1da;
   --panel-dark: #1a1d21;
   --panel-glow-base: #efe9e4;
-  --scrap: #f8f6f1;
+  /* The handwritten note. Lighter than the panel it sits on. */
+  --scrap: #fbfaf7;
 
   /* Brand */
   --brown: #b5603f;

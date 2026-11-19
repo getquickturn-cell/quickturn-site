@@ -5,9 +5,17 @@
  * directive it is declarative at the point of use and each element cleans
  * up its own observer, so nothing leaks when a page unmounts.
  *
- * Client-only: there is no IntersectionObserver during prerender, and the
- * resting state of `.reveal` is visible, so a prerendered page that never
- * runs this still shows all its content.
+ * Templates author `class="reveal"` alongside the directive, so the resting
+ * state is in the prerendered HTML and the first paint is already correct.
+ * The `classList.add` below is therefore usually a no-op; it stays so that
+ * `v-reveal` on its own still works.
+ *
+ * Registered universally, not as a `.client` plugin: a directive used in a
+ * prerendered template has to exist on the server too, or rendering fails
+ * looking for its SSR props. Nothing here runs during prerender regardless —
+ * `mounted` only fires in a browser, which is also where the only
+ * IntersectionObserver lives. The resting state of `.reveal` is visible, so
+ * a page that never runs this still shows all of its content.
  */
 
 const OBSERVER_OPTIONS: IntersectionObserverInit = {

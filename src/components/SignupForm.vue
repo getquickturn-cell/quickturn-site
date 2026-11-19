@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from "vue";
 import { site } from "~~/content/site";
+import { trackEvent } from "~/utils/analytics";
 
 /**
  * Beta signup. Posts to the same Google Form the site has always used, so
@@ -120,12 +121,6 @@ async function onSubmit() {
   } finally {
     submitting.value = false;
   }
-}
-
-/** Fire a Google Analytics event if gtag loaded; never throw if it didn't. */
-function trackEvent(event: string, params: Record<string, unknown> = {}) {
-  const gtag = (window as { gtag?: (...args: unknown[]) => void }).gtag;
-  if (typeof gtag === "function") gtag("event", event, params);
 }
 
 /** Split the failure message around its `{link}` placeholder. */
